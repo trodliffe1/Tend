@@ -10,21 +10,55 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FBF9F6"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tend.app",
+      "infoPlist": {
+        "NSContactsUsageDescription": "Tend needs access to your contacts to help you import people you want to stay connected with.",
+        "NSCalendarsUsageDescription": "Tend needs access to your calendar to add date night events.",
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized reminders."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FBF9F6"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "edgeToEdgeEnabled": false,
+      "package": "com.tend.app",
+      "permissions": [
+        "NOTIFICATIONS",
+        "READ_CONTACTS",
+        "WRITE_CALENDAR",
+        "READ_CALENDAR"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6B8E6B"
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow Tend to access your contacts to import people you want to stay connected with."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow Tend to access your calendar to schedule date nights."
+        }
+      ],
+      "expo-sqlite"
+    ]
   }
 }
