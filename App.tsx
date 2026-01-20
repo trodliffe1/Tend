@@ -37,7 +37,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabIcon({ name }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Home: '🌱',
+    Home: '🛰️',
     DateNight: '💕',
     Settings: '⚙️',
   };
@@ -55,7 +55,7 @@ function MainTabs() {
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarActiveBackgroundColor: '#E8F5E9',
+        tabBarActiveBackgroundColor: colors.surfaceElevated,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
@@ -85,7 +85,7 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Garden',
+          title: 'Orbit',
           headerShown: false,
         }}
       />
@@ -136,7 +136,7 @@ function AppNavigator() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Growing your garden...</Text>
+        <Text style={styles.loadingText}>Establishing connection...</Text>
       </View>
     );
   }
@@ -159,13 +159,14 @@ function AppNavigator() {
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}
-          options={{ headerShown: false }}
+          options={{ headerShown: false, title: 'Orbit' }}
         />
         <Stack.Screen
           name="PersonDetail"
           component={PersonDetailScreen}
           options={{
             title: 'Details',
+            headerBackTitle: 'Back To Orbit',
           }}
         />
         <Stack.Screen
@@ -185,7 +186,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppProvider>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <AppNavigator />
       </AppProvider>
     </SafeAreaProvider>

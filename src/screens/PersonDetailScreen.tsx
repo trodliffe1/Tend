@@ -26,11 +26,12 @@ import {
 import {
   getHealthStatus,
   getHealthColor,
-  getPlantEmoji,
+  getStatusPercentage,
   formatDate,
   formatRelativeDate,
   generateId,
 } from '../utils/helpers';
+import HealthBar from '../components/HealthBar';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -65,7 +66,7 @@ export default function PersonDetailScreen() {
 
   const status = getHealthStatus(person);
   const statusColor = getHealthColor(status);
-  const plantEmoji = getPlantEmoji(status);
+  const percentage = getStatusPercentage(person);
 
   const handleInteractionSelect = async (type: InteractionType) => {
     await logInteraction(person.id, type);
@@ -93,7 +94,7 @@ export default function PersonDetailScreen() {
   const handleDeletePerson = () => {
     Alert.alert(
       'Remove Person',
-      `Are you sure you want to remove ${person.name} from your garden?`,
+      `Are you sure you want to remove ${person.name} from your orbit?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -123,7 +124,7 @@ export default function PersonDetailScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={[styles.avatarContainer, { borderColor: statusColor }]}>
+          <View style={styles.avatarSection}>
             {person.photo ? (
               <Image source={{ uri: person.photo }} style={styles.avatar} />
             ) : (
@@ -131,8 +132,9 @@ export default function PersonDetailScreen() {
                 <Text style={styles.avatarText}>{person.name.charAt(0).toUpperCase()}</Text>
               </View>
             )}
+            <HealthBar status={status} percentage={percentage} height={96} width={8} />
           </View>
-          <Text style={styles.name}>{person.name} {plantEmoji}</Text>
+          <Text style={styles.name}>{person.name}</Text>
           <Text style={styles.relationship}>{RELATIONSHIP_LABELS[person.relationshipType]}</Text>
           <View style={[styles.frequencyBadge, { backgroundColor: statusColor + '20' }]}>
             <Text style={[styles.frequencyText, { color: statusColor }]}>
@@ -144,11 +146,66 @@ export default function PersonDetailScreen() {
         {/* Log Interaction Button */}
         <View style={styles.section}>
           <Button
-            title="Log Interaction"
+            title="Log Contact"
             onPress={() => setPickerVisible(true)}
             size="large"
           />
         </View>
+
+        {/* Important Dates */}
+        {(person.birthday || person.anniversary) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Important Dates</Text>
+            <View style={styles.infoCard}>
+              {person.birthday && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>🎂 Birthday</Text>
+                  <Text style={styles.infoValue}>{person.birthday}</Text>
+                </View>
+              )}
+              {person.anniversary && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>💍 Anniversary</Text>
+                  <Text style={styles.infoValue}>{person.anniversary}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Spouse */}
+        {person.spouse && person.spouse.name && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Spouse / Partner</Text>
+            <View style={styles.familyCard}>
+              <Text style={styles.familyName}>{person.spouse.name}</Text>
+              {person.spouse.birthday && (
+                <Text style={styles.familyDetail}>🎂 {person.spouse.birthday}</Text>
+              )}
+              {person.spouse.info && (
+                <Text style={styles.familyInfo}>{person.spouse.info}</Text>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Kids */}
+        {person.kids && person.kids.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Kids</Text>
+            {person.kids.map((kid) => (
+              <View key={kid.id} style={styles.familyCard}>
+                <Text style={styles.familyName}>{kid.name}</Text>
+                {kid.birthday && (
+                  <Text style={styles.familyDetail}>🎂 {kid.birthday}</Text>
+                )}
+                {kid.info && (
+                  <Text style={styles.familyInfo}>{kid.info}</Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Notes Section */}
         <View style={styles.section}>
@@ -164,6 +221,7 @@ export default function PersonDetailScreen() {
               <TextInput
                 style={styles.noteInput}
                 placeholder="e.g., Ask about the job interview..."
+                placeholderTextColor={colors.textLight}
                 value={newNote}
                 onChangeText={setNewNote}
                 multiline
@@ -217,7 +275,7 @@ export default function PersonDetailScreen() {
             <Text style={styles.editButtonText}>Edit Details</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePerson}>
-            <Text style={styles.deleteButtonText}>Remove from Garden</Text>
+            <Text style={styles.deleteButtonText}>Remove from Orbit</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -253,10 +311,10 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: borderRadius.xl,
     borderBottomRightRadius: borderRadius.xl,
   },
-  avatarContainer: {
-    borderWidth: 3,
-    borderRadius: 52,
-    padding: 3,
+  avatarSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   avatar: {
     width: 96,
@@ -329,8 +387,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.sm,
     fontSize: 16,
+    color: colors.text,
     minHeight: 60,
     textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   emptyText: {
     fontSize: 14,
@@ -398,5 +459,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.error,
     fontWeight: '500',
+  },
+  infoCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  infoLabel: {
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  infoValue: {
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  familyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  familyName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  familyDetail: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  familyInfo: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
   },
 });

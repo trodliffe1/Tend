@@ -19,6 +19,13 @@ export interface Interaction {
   note?: string;
 }
 
+export interface FamilyMember {
+  id: string;
+  name: string;
+  birthday?: string;  // ISO date string
+  info?: string;      // Free form notes
+}
+
 export interface Person {
   id: string;
   name: string;
@@ -26,6 +33,10 @@ export interface Person {
   relationshipType: RelationshipType;
   frequency: ContactFrequency;
   lastContactDate: string | null;
+  birthday?: string;      // ISO date string
+  anniversary?: string;   // ISO date string
+  spouse?: FamilyMember;
+  kids: FamilyMember[];
   notes: Note[];
   interactions: Interaction[];
   createdAt: string;
@@ -39,8 +50,15 @@ export interface NotificationSettings {
   quietDays: number[];     // 0 = Sunday, 6 = Saturday
 }
 
+export interface DateReminderSettings {
+  earlyWarningEnabled: boolean;
+  earlyWarningDays: number;    // Days before to send early warning
+  onTheDayEnabled: boolean;
+}
+
 export interface AppSettings {
   notifications: NotificationSettings;
+  dateReminders: DateReminderSettings;
 }
 
 export const FREQUENCY_DAYS: Record<ContactFrequency, number> = {

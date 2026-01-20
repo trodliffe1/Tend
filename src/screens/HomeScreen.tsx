@@ -58,10 +58,10 @@ export default function HomeScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyEmoji}>🌱</Text>
-      <Text style={styles.emptyTitle}>Start Growing Your Garden</Text>
+      <Text style={styles.emptyEmoji}>🛰️</Text>
+      <Text style={styles.emptyTitle}>Launch Your First Connection</Text>
       <Text style={styles.emptySubtitle}>
-        Add the people who matter to you and we'll help you nurture those connections
+        Add the people who matter to you and we'll help you keep them in orbit
       </Text>
       <TouchableOpacity
         style={styles.addButton}
@@ -74,7 +74,7 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.greeting}>Your Relationships</Text>
+      <Text style={styles.greeting}>My Orbit</Text>
       {persons.length > 0 && (
         <View style={styles.statsContainer}>
           <View style={[styles.statBadge, { backgroundColor: colors.overdue + '20' }]}>
@@ -87,7 +87,7 @@ export default function HomeScreen() {
           </View>
           <View style={[styles.statBadge, { backgroundColor: colors.healthy + '20' }]}>
             <Text style={[styles.statNumber, { color: colors.healthy }]}>{stats.healthy}</Text>
-            <Text style={styles.statLabel}>Thriving</Text>
+            <Text style={styles.statLabel}>Strong Signal</Text>
           </View>
         </View>
       )}

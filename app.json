@@ -1,33 +1,33 @@
 {
   "expo": {
-    "name": "Tend",
-    "slug": "Tend",
+    "name": "Orbyt",
+    "slug": "Orbyt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FBF9F6"
+      "backgroundColor": "#0F0B1A"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tend.app",
+      "bundleIdentifier": "com.orbyt.app",
       "infoPlist": {
-        "NSContactsUsageDescription": "Tend needs access to your contacts to help you import people you want to stay connected with.",
-        "NSCalendarsUsageDescription": "Tend needs access to your calendar to add date night events.",
+        "NSContactsUsageDescription": "Orbyt needs access to your contacts to help you import people you want to stay connected with.",
+        "NSCalendarsUsageDescription": "Orbyt needs access to your calendar to add date night events.",
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized reminders."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FBF9F6"
+        "backgroundColor": "#0F0B1A"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.tend.app",
+      "package": "com.orbyt.app",
       "permissions": [
         "NOTIFICATIONS",
         "READ_CONTACTS",
@@ -43,19 +43,19 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#6B8E6B"
+          "color": "#8B5CF6"
         }
       ],
       [
         "expo-contacts",
         {
-          "contactsPermission": "Allow Tend to access your contacts to import people you want to stay connected with."
+          "contactsPermission": "Allow Orbyt to access your contacts to import people you want to stay connected with."
         }
       ],
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow Tend to access your calendar to schedule date nights."
+          "calendarPermission": "Allow Orbyt to access your calendar to schedule date nights."
         }
       ],
       "expo-sqlite"

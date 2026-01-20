@@ -26,6 +26,11 @@ const defaultSettings: AppSettings = {
     preferredTime: '09:00',
     quietDays: [],
   },
+  dateReminders: {
+    earlyWarningEnabled: true,
+    earlyWarningDays: 7,
+    onTheDayEnabled: true,
+  },
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -59,6 +64,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const person = {
       ...personData,
       id: generateId(),
+      kids: personData.kids || [],
       createdAt: new Date().toISOString(),
     };
     await db.createPerson(person);

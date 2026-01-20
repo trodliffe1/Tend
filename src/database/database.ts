@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
-import { Person, Note, Interaction, AppSettings, NotificationSettings } from '../types';
+import { Person, Note, Interaction, AppSettings, FamilyMember } from '../types';
 
-const DB_NAME = 'tend.db';
+const DB_NAME = 'orbyt.db';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -24,7 +24,19 @@ async function initDatabase(): Promise<void> {
       relationshipType TEXT NOT NULL,
       frequency TEXT NOT NULL,
       lastContactDate TEXT,
+      birthday TEXT,
+      anniversary TEXT,
       createdAt TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS family_members (
+      id TEXT PRIMARY KEY,
+      personId TEXT NOT NULL,
+      memberType TEXT NOT NULL,
+      name TEXT NOT NULL,
+      birthday TEXT,
+      info TEXT,
+      FOREIGN KEY (personId) REFERENCES persons(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS notes (
@@ -50,11 +62,31 @@ async function initDatabase(): Promise<void> {
       quietHoursStart TEXT DEFAULT '22:00',
       quietHoursEnd TEXT DEFAULT '08:00',
       preferredTime TEXT DEFAULT '09:00',
-      quietDays TEXT DEFAULT '[]'
+      quietDays TEXT DEFAULT '[]',
+      earlyWarningEnabled INTEGER DEFAULT 1,
+      earlyWarningDays INTEGER DEFAULT 7,
+      onTheDayEnabled INTEGER DEFAULT 1
     );
 
     INSERT OR IGNORE INTO settings (id) VALUES (1);
   `);
+
+  // Migration: Add new columns if they don't exist
+  try {
+    await db.runAsync('ALTER TABLE persons ADD COLUMN birthday TEXT');
+  } catch (e) { /* Column already exists */ }
+  try {
+    await db.runAsync('ALTER TABLE persons ADD COLUMN anniversary TEXT');
+  } catch (e) { /* Column already exists */ }
+  try {
+    await db.runAsync('ALTER TABLE settings ADD COLUMN earlyWarningEnabled INTEGER DEFAULT 1');
+  } catch (e) { /* Column already exists */ }
+  try {
+    await db.runAsync('ALTER TABLE settings ADD COLUMN earlyWarningDays INTEGER DEFAULT 7');
+  } catch (e) { /* Column already exists */ }
+  try {
+    await db.runAsync('ALTER TABLE settings ADD COLUMN onTheDayEnabled INTEGER DEFAULT 1');
+  } catch (e) { /* Column already exists */ }
 }
 
 // Person CRUD operations
@@ -72,8 +104,20 @@ export async function getAllPersons(): Promise<Person[]> {
       'SELECT id, type, date, note FROM interactions WHERE personId = ? ORDER BY date DESC',
       [person.id]
     );
+    const familyMembers = await database.getAllAsync<any>(
+      'SELECT id, memberType, name, birthday, info FROM family_members WHERE personId = ?',
+      [person.id]
+    );
+
+    const spouse = familyMembers.find(m => m.memberType === 'spouse');
+    const kids = familyMembers
+      .filter(m => m.memberType === 'kid')
+      .map(({ memberType, ...rest }) => rest as FamilyMember);
+
     result.push({
       ...person,
+      spouse: spouse ? { id: spouse.id, name: spouse.name, birthday: spouse.birthday, info: spouse.info } : undefined,
+      kids,
       notes,
       interactions,
     });
@@ -99,9 +143,20 @@ export async function getPersonById(id: string): Promise<Person | null> {
     'SELECT id, type, date, note FROM interactions WHERE personId = ? ORDER BY date DESC',
     [person.id]
   );
+  const familyMembers = await database.getAllAsync<any>(
+    'SELECT id, memberType, name, birthday, info FROM family_members WHERE personId = ?',
+    [person.id]
+  );
+
+  const spouse = familyMembers.find(m => m.memberType === 'spouse');
+  const kids = familyMembers
+    .filter(m => m.memberType === 'kid')
+    .map(({ memberType, ...rest }) => rest as FamilyMember);
 
   return {
     ...person,
+    spouse: spouse ? { id: spouse.id, name: spouse.name, birthday: spouse.birthday, info: spouse.info } : undefined,
+    kids,
     notes,
     interactions,
   };
@@ -110,10 +165,26 @@ export async function getPersonById(id: string): Promise<Person | null> {
 export async function createPerson(person: Omit<Person, 'notes' | 'interactions'>): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `INSERT INTO persons (id, name, photo, relationshipType, frequency, lastContactDate, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [person.id, person.name, person.photo || null, person.relationshipType, person.frequency, person.lastContactDate, person.createdAt]
+    `INSERT INTO persons (id, name, photo, relationshipType, frequency, lastContactDate, birthday, anniversary, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [person.id, person.name, person.photo || null, person.relationshipType, person.frequency, person.lastContactDate, person.birthday || null, person.anniversary || null, person.createdAt]
   );
+
+  // Insert spouse if provided
+  if (person.spouse) {
+    await database.runAsync(
+      'INSERT INTO family_members (id, personId, memberType, name, birthday, info) VALUES (?, ?, ?, ?, ?, ?)',
+      [person.spouse.id, person.id, 'spouse', person.spouse.name, person.spouse.birthday || null, person.spouse.info || null]
+    );
+  }
+
+  // Insert kids if provided
+  for (const kid of person.kids) {
+    await database.runAsync(
+      'INSERT INTO family_members (id, personId, memberType, name, birthday, info) VALUES (?, ?, ?, ?, ?, ?)',
+      [kid.id, person.id, 'kid', kid.name, kid.birthday || null, kid.info || null]
+    );
+  }
 }
 
 export async function updatePerson(person: Partial<Person> & { id: string }): Promise<void> {
@@ -141,6 +212,14 @@ export async function updatePerson(person: Partial<Person> & { id: string }): Pr
     updates.push('lastContactDate = ?');
     values.push(person.lastContactDate);
   }
+  if (person.birthday !== undefined) {
+    updates.push('birthday = ?');
+    values.push(person.birthday);
+  }
+  if (person.anniversary !== undefined) {
+    updates.push('anniversary = ?');
+    values.push(person.anniversary);
+  }
 
   if (updates.length > 0) {
     values.push(person.id);
@@ -149,12 +228,41 @@ export async function updatePerson(person: Partial<Person> & { id: string }): Pr
       values
     );
   }
+
+  // Update spouse - delete existing and insert new
+  if (person.spouse !== undefined) {
+    await database.runAsync(
+      'DELETE FROM family_members WHERE personId = ? AND memberType = ?',
+      [person.id, 'spouse']
+    );
+    if (person.spouse) {
+      await database.runAsync(
+        'INSERT INTO family_members (id, personId, memberType, name, birthday, info) VALUES (?, ?, ?, ?, ?, ?)',
+        [person.spouse.id, person.id, 'spouse', person.spouse.name, person.spouse.birthday || null, person.spouse.info || null]
+      );
+    }
+  }
+
+  // Update kids - delete existing and insert new
+  if (person.kids !== undefined) {
+    await database.runAsync(
+      'DELETE FROM family_members WHERE personId = ? AND memberType = ?',
+      [person.id, 'kid']
+    );
+    for (const kid of person.kids) {
+      await database.runAsync(
+        'INSERT INTO family_members (id, personId, memberType, name, birthday, info) VALUES (?, ?, ?, ?, ?, ?)',
+        [kid.id, person.id, 'kid', kid.name, kid.birthday || null, kid.info || null]
+      );
+    }
+  }
 }
 
 export async function deletePerson(id: string): Promise<void> {
   const database = await getDatabase();
   await database.runAsync('DELETE FROM notes WHERE personId = ?', [id]);
   await database.runAsync('DELETE FROM interactions WHERE personId = ?', [id]);
+  await database.runAsync('DELETE FROM family_members WHERE personId = ?', [id]);
   await database.runAsync('DELETE FROM persons WHERE id = ?', [id]);
 }
 
@@ -200,6 +308,11 @@ export async function getSettings(): Promise<AppSettings> {
       preferredTime: row?.preferredTime || '09:00',
       quietDays: JSON.parse(row?.quietDays || '[]'),
     },
+    dateReminders: {
+      earlyWarningEnabled: row?.earlyWarningEnabled !== 0,
+      earlyWarningDays: row?.earlyWarningDays ?? 7,
+      onTheDayEnabled: row?.onTheDayEnabled !== 0,
+    },
   };
 }
 
@@ -211,7 +324,10 @@ export async function updateSettings(settings: AppSettings): Promise<void> {
       quietHoursStart = ?,
       quietHoursEnd = ?,
       preferredTime = ?,
-      quietDays = ?
+      quietDays = ?,
+      earlyWarningEnabled = ?,
+      earlyWarningDays = ?,
+      onTheDayEnabled = ?
     WHERE id = 1`,
     [
       settings.notifications.enabled ? 1 : 0,
@@ -219,6 +335,9 @@ export async function updateSettings(settings: AppSettings): Promise<void> {
       settings.notifications.quietHoursEnd,
       settings.notifications.preferredTime,
       JSON.stringify(settings.notifications.quietDays),
+      settings.dateReminders.earlyWarningEnabled ? 1 : 0,
+      settings.dateReminders.earlyWarningDays,
+      settings.dateReminders.onTheDayEnabled ? 1 : 0,
     ]
   );
 }

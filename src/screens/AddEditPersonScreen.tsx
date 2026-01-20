@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -20,9 +22,11 @@ import { colors, spacing, borderRadius } from '../constants/theme';
 import {
   RelationshipType,
   ContactFrequency,
+  FamilyMember,
   RELATIONSHIP_LABELS,
   FREQUENCY_LABELS,
 } from '../types';
+import { generateId } from '../utils/helpers';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -50,7 +54,26 @@ export default function AddEditPersonScreen() {
   const [frequency, setFrequency] = useState<ContactFrequency>(
     existingPerson?.frequency || 'weekly'
   );
+  const [birthday, setBirthday] = useState(existingPerson?.birthday || '');
+  const [anniversary, setAnniversary] = useState(existingPerson?.anniversary || '');
+  const [spouse, setSpouse] = useState<FamilyMember | undefined>(existingPerson?.spouse);
+  const [kids, setKids] = useState<FamilyMember[]>(existingPerson?.kids || []);
   const [saving, setSaving] = useState(false);
+
+  // Format date input as MM/DD
+  const formatDateInput = (text: string): string => {
+    // Remove any non-numeric characters except /
+    const cleaned = text.replace(/[^\d]/g, '');
+
+    if (cleaned.length === 0) return '';
+    if (cleaned.length <= 2) return cleaned;
+
+    // Format as MM/DD
+    const month = cleaned.slice(0, 2);
+    const day = cleaned.slice(2, 4);
+
+    return `${month}/${day}`;
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -103,11 +126,28 @@ export default function AddEditPersonScreen() {
     }
   };
 
+  const addKid = () => {
+    setKids([...kids, { id: generateId(), name: '', birthday: '', info: '' }]);
+  };
+
+  const updateKid = (index: number, field: keyof FamilyMember, value: string) => {
+    const updated = [...kids];
+    updated[index] = { ...updated[index], [field]: value };
+    setKids(updated);
+  };
+
+  const removeKid = (index: number) => {
+    setKids(kids.filter((_, i) => i !== index));
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Name Required', 'Please enter a name for this person.');
       return;
     }
+
+    // Filter out kids with no name
+    const validKids = kids.filter(k => k.name.trim());
 
     setSaving(true);
     try {
@@ -118,6 +158,10 @@ export default function AddEditPersonScreen() {
           photo,
           relationshipType,
           frequency,
+          birthday: birthday || undefined,
+          anniversary: anniversary || undefined,
+          spouse: spouse?.name?.trim() ? spouse : undefined,
+          kids: validKids,
         });
       } else {
         await addPerson({
@@ -126,6 +170,10 @@ export default function AddEditPersonScreen() {
           relationshipType,
           frequency,
           lastContactDate: null,
+          birthday: birthday || undefined,
+          anniversary: anniversary || undefined,
+          spouse: spouse?.name?.trim() ? spouse : undefined,
+          kids: validKids,
         });
       }
       navigation.goBack();
@@ -141,7 +189,15 @@ export default function AddEditPersonScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Photo Section */}
         <View style={styles.photoSection}>
           <TouchableOpacity onPress={pickImage} style={styles.photoContainer}>
@@ -162,6 +218,7 @@ export default function AddEditPersonScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter name"
+            placeholderTextColor={colors.textLight}
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
@@ -225,17 +282,141 @@ export default function AddEditPersonScreen() {
           </View>
         </View>
 
-        {/* Save Button */}
+        {/* Important Dates */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Important Dates</Text>
+          <View style={styles.dateRow}>
+            <View style={styles.dateField}>
+              <Text style={styles.subLabel}>Birthday</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="MM/DD"
+                placeholderTextColor={colors.textLight}
+                value={birthday}
+                onChangeText={(text) => setBirthday(formatDateInput(text))}
+                keyboardType="number-pad"
+                maxLength={5}
+              />
+            </View>
+            <View style={styles.dateField}>
+              <Text style={styles.subLabel}>Anniversary</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="MM/DD"
+                placeholderTextColor={colors.textLight}
+                value={anniversary}
+                onChangeText={(text) => setAnniversary(formatDateInput(text))}
+                keyboardType="number-pad"
+                maxLength={5}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Spouse/Partner */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Spouse / Partner</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            placeholderTextColor={colors.textLight}
+            value={spouse?.name || ''}
+            onChangeText={(text) => setSpouse({ id: spouse?.id || generateId(), name: text, birthday: spouse?.birthday, info: spouse?.info })}
+          />
+          <View style={styles.dateRow}>
+            <View style={styles.dateField}>
+              <TextInput
+                style={[styles.input, styles.smallInput]}
+                placeholder="Birthday (MM/DD)"
+                placeholderTextColor={colors.textLight}
+                value={spouse?.birthday || ''}
+                onChangeText={(text) => setSpouse({ ...spouse!, birthday: formatDateInput(text) })}
+                keyboardType="number-pad"
+                maxLength={5}
+              />
+            </View>
+            <View style={styles.dateField}>
+              <TextInput
+                style={[styles.input, styles.smallInput]}
+                placeholder="Notes"
+                placeholderTextColor={colors.textLight}
+                value={spouse?.info || ''}
+                onChangeText={(text) => setSpouse({ ...spouse!, info: text })}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Kids */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.label}>Kids</Text>
+            <TouchableOpacity onPress={addKid}>
+              <Text style={styles.addLink}>+ Add</Text>
+            </TouchableOpacity>
+          </View>
+          {kids.map((kid, index) => (
+            <View key={kid.id} style={styles.kidCard}>
+              <View style={styles.kidHeader}>
+                <Text style={styles.kidNumber}>Child {index + 1}</Text>
+                <TouchableOpacity onPress={() => removeKid(index)}>
+                  <Text style={styles.removeLink}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                placeholderTextColor={colors.textLight}
+                value={kid.name}
+                onChangeText={(text) => updateKid(index, 'name', text)}
+              />
+              <View style={styles.dateRow}>
+                <View style={styles.dateField}>
+                  <TextInput
+                    style={[styles.input, styles.smallInput]}
+                    placeholder="Birthday (MM/DD)"
+                    placeholderTextColor={colors.textLight}
+                    value={kid.birthday || ''}
+                    onChangeText={(text) => updateKid(index, 'birthday', formatDateInput(text))}
+                    keyboardType="number-pad"
+                    maxLength={5}
+                  />
+                </View>
+                <View style={styles.dateField}>
+                  <TextInput
+                    style={[styles.input, styles.smallInput]}
+                    placeholder="Notes (age, interests...)"
+                    placeholderTextColor={colors.textLight}
+                    value={kid.info || ''}
+                    onChangeText={(text) => updateKid(index, 'info', text)}
+                  />
+                </View>
+              </View>
+            </View>
+          ))}
+          {kids.length === 0 && (
+            <Text style={styles.emptyText}>No kids added</Text>
+          )}
+        </View>
+
+        {/* Buttons */}
         <View style={styles.buttonSection}>
           <Button
-            title={isEditing ? 'Save Changes' : 'Add to Garden'}
+            title={isEditing ? 'Save Changes' : 'Launch into Orbit'}
             onPress={handleSave}
             loading={saving}
             disabled={!name.trim()}
             size="large"
           />
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -244,6 +425,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: spacing.xl,
@@ -298,6 +482,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     fontSize: 16,
     color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   importButton: {
     marginTop: spacing.sm,
@@ -360,5 +546,71 @@ const styles = StyleSheet.create({
   buttonSection: {
     paddingHorizontal: spacing.lg,
     marginTop: spacing.lg,
+  },
+  cancelButton: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  dateField: {
+    flex: 1,
+  },
+  subLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  smallInput: {
+    marginTop: 0,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  addLink: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  kidCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  kidHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  kidNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  removeLink: {
+    fontSize: 13,
+    color: colors.error,
+    fontWeight: '500',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textLight,
+    fontStyle: 'italic',
   },
 });

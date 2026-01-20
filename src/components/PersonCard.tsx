@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Person, RELATIONSHIP_LABELS } from '../types';
-import { getHealthStatus, getHealthColor, getPlantEmoji, formatRelativeDate, getWarmMessage, getDaysUntilDue } from '../utils/helpers';
+import { getHealthStatus, getHealthColor, formatRelativeDate, getDaysUntilDue, getStatusPercentage } from '../utils/helpers';
 import { colors, spacing, borderRadius } from '../constants/theme';
+import HealthBar from './HealthBar';
 
 interface PersonCardProps {
   person: Person;
@@ -13,7 +14,7 @@ interface PersonCardProps {
 export default function PersonCard({ person, onPress, onQuickLog }: PersonCardProps) {
   const status = getHealthStatus(person);
   const statusColor = getHealthColor(status);
-  const plantEmoji = getPlantEmoji(status);
+  const percentage = getStatusPercentage(person);
   const daysUntilDue = getDaysUntilDue(person);
 
   const getStatusText = () => {
@@ -28,11 +29,9 @@ export default function PersonCard({ person, onPress, onQuickLog }: PersonCardPr
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
-
       <View style={styles.content}>
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
+          <View style={styles.avatarSection}>
             {person.photo ? (
               <Image source={{ uri: person.photo }} style={styles.avatar} />
             ) : (
@@ -40,13 +39,11 @@ export default function PersonCard({ person, onPress, onQuickLog }: PersonCardPr
                 <Text style={styles.avatarText}>{person.name.charAt(0).toUpperCase()}</Text>
               </View>
             )}
+            <HealthBar status={status} percentage={percentage} height={48} width={6} />
           </View>
 
           <View style={styles.info}>
-            <View style={styles.nameRow}>
-              <Text style={styles.name}>{person.name}</Text>
-              <Text style={styles.plant}>{plantEmoji}</Text>
-            </View>
+            <Text style={styles.name}>{person.name}</Text>
             <Text style={styles.relationship}>{RELATIONSHIP_LABELS[person.relationshipType]}</Text>
           </View>
         </View>
@@ -93,9 +90,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  statusIndicator: {
-    width: 4,
-  },
   content: {
     flex: 1,
     padding: spacing.md,
@@ -105,8 +99,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
-  avatarContainer: {
+  avatarSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: spacing.md,
+    gap: spacing.xs,
   },
   avatar: {
     width: 48,
@@ -128,18 +125,10 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   name: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
-    marginRight: spacing.xs,
-  },
-  plant: {
-    fontSize: 16,
   },
   relationship: {
     fontSize: 14,
@@ -157,7 +146,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   noteHint: {
-    backgroundColor: colors.secondary + '50',
+    backgroundColor: colors.surfaceElevated,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,

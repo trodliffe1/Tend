@@ -1,4 +1,5 @@
 import { Person, HealthStatus, FREQUENCY_DAYS, Note } from '../types';
+import { colors } from '../constants/theme';
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -81,20 +82,20 @@ export function getWarmMessage(person: Person): string {
   const status = getHealthStatus(person);
   const messages = {
     overdue: [
-      `${person.name} might love to hear from you`,
-      `It's been a while since you connected with ${person.name}`,
-      `${person.name} would probably appreciate a quick hello`,
-      `Time to catch up with ${person.name}?`,
+      `${person.name} might be drifting away`,
+      `Send a signal to ${person.name}—they're fading from orbit`,
+      `${person.name} could use a ping from you`,
+      `Time to re-establish contact with ${person.name}?`,
     ],
     'due-soon': [
-      `${person.name} might be on your mind soon`,
-      `You could reach out to ${person.name} this week`,
-      `${person.name} is coming up on your radar`,
+      `${person.name}'s orbit is getting wider`,
+      `Consider sending a signal to ${person.name} soon`,
+      `${person.name} is approaching the edge of range`,
     ],
     healthy: [
-      `You're doing great staying in touch with ${person.name}`,
-      `${person.name} connection is thriving`,
-      `Nice work maintaining your bond with ${person.name}`,
+      `${person.name} is in close orbit—nice work`,
+      `Strong signal with ${person.name}`,
+      `You're keeping ${person.name} in orbit`,
     ],
   };
 
@@ -105,21 +106,26 @@ export function getWarmMessage(person: Person): string {
 export function getHealthColor(status: HealthStatus): string {
   switch (status) {
     case 'healthy':
-      return '#4CAF50';
+      return colors.healthy;
     case 'due-soon':
-      return '#FF9800';
+      return colors.dueSoon;
     case 'overdue':
-      return '#E57373';
+      return colors.overdue;
   }
 }
 
-export function getPlantEmoji(status: HealthStatus): string {
-  switch (status) {
-    case 'healthy':
-      return '🌿';
-    case 'due-soon':
-      return '🌱';
-    case 'overdue':
-      return '🥀';
+export function getStatusPercentage(person: Person): number {
+  if (!person.lastContactDate) {
+    return 0;
   }
+
+  const lastContact = new Date(person.lastContactDate);
+  const now = new Date();
+  const daysSinceContact = Math.floor(
+    (now.getTime() - lastContact.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  const targetDays = FREQUENCY_DAYS[person.frequency];
+  const percentage = Math.max(0, Math.min(100, ((targetDays - daysSinceContact) / targetDays) * 100));
+  return percentage;
 }

@@ -46,11 +46,52 @@ export default function SettingsScreen() {
       const data = await exportData();
       await Share.share({
         message: data,
-        title: 'Tend - Exported Data',
+        title: 'Orbyt - Exported Data',
       });
     } catch (error) {
       Alert.alert('Export Failed', 'Could not export data. Please try again.');
     }
+  };
+
+  const handleToggleEarlyWarning = async (enabled: boolean) => {
+    const newSettings = {
+      ...localSettings,
+      dateReminders: { ...localSettings.dateReminders, earlyWarningEnabled: enabled },
+    };
+    setLocalSettings(newSettings);
+    await updateSettings(newSettings);
+  };
+
+  const handleToggleOnTheDay = async (enabled: boolean) => {
+    const newSettings = {
+      ...localSettings,
+      dateReminders: { ...localSettings.dateReminders, onTheDayEnabled: enabled },
+    };
+    setLocalSettings(newSettings);
+    await updateSettings(newSettings);
+  };
+
+  const handleEarlyWarningDaysSelect = () => {
+    const options = [1, 2, 3, 5, 7, 14, 30];
+
+    Alert.alert(
+      'Early Warning',
+      'How many days before?',
+      [
+        ...options.map(days => ({
+          text: days === 1 ? '1 day' : `${days} days`,
+          onPress: async () => {
+            const newSettings = {
+              ...localSettings,
+              dateReminders: { ...localSettings.dateReminders, earlyWarningDays: days },
+            };
+            setLocalSettings(newSettings);
+            await updateSettings(newSettings);
+          },
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const handleTimeSelect = (field: 'preferredTime' | 'quietHoursStart' | 'quietHoursEnd') => {
@@ -166,6 +207,60 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        {/* Date Reminders Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Birthday & Anniversary Reminders</Text>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>On the Day</Text>
+              <Text style={styles.settingDescription}>
+                Get notified on birthdays & anniversaries
+              </Text>
+            </View>
+            <Switch
+              value={localSettings.dateReminders?.onTheDayEnabled ?? true}
+              onValueChange={handleToggleOnTheDay}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.surface}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Early Warning</Text>
+              <Text style={styles.settingDescription}>
+                Get a heads up before important dates
+              </Text>
+            </View>
+            <Switch
+              value={localSettings.dateReminders?.earlyWarningEnabled ?? true}
+              onValueChange={handleToggleEarlyWarning}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.surface}
+            />
+          </View>
+
+          {localSettings.dateReminders?.earlyWarningEnabled && (
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={handleEarlyWarningDaysSelect}
+            >
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Days Before</Text>
+                <Text style={styles.settingDescription}>
+                  When to send the early warning
+                </Text>
+              </View>
+              <Text style={styles.settingValue}>
+                {localSettings.dateReminders?.earlyWarningDays === 1
+                  ? '1 day'
+                  : `${localSettings.dateReminders?.earlyWarningDays ?? 7} days`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Data Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Data</Text>
@@ -186,9 +281,9 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>About</Text>
 
           <View style={styles.aboutCard}>
-            <Text style={styles.aboutTitle}>Tend 🌱</Text>
+            <Text style={styles.aboutTitle}>Orbyt 🛰️</Text>
             <Text style={styles.aboutText}>
-              A relationship health tracker to help you nurture the connections that matter most.
+              A relationship tracker to help you maintain signal with the humans who matter.
             </Text>
             <Text style={styles.versionText}>Version 1.0.0</Text>
           </View>

@@ -1,19 +1,31 @@
 export const colors = {
-  primary: '#6B8E6B',
-  primaryLight: '#8FB08F',
-  primaryDark: '#4A6B4A',
-  secondary: '#E8D5B7',
-  background: '#FBF9F6',
-  surface: '#FFFFFF',
-  text: '#2D3436',
-  textSecondary: '#636E72',
-  textLight: '#B2BEC3',
-  healthy: '#7CB342',
-  dueSoon: '#FFB74D',
-  overdue: '#E57373',
-  border: '#E0E0E0',
-  error: '#E53935',
-  success: '#43A047',
+  // Primary: Cosmic purple
+  primary: '#8B5CF6',
+  primaryLight: '#A78BFA',
+  primaryDark: '#6D28D9',
+
+  // Secondary: Stardust
+  secondary: '#E0E7FF',
+
+  // Dark space backgrounds
+  background: '#0F0B1A',
+  surface: '#1A1625',
+  surfaceElevated: '#252136',
+
+  // Light text for dark backgrounds
+  text: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  textLight: '#64748B',
+
+  // Status colors (vibrant for dark mode)
+  healthy: '#10B981',    // Emerald
+  dueSoon: '#FBBF24',    // Amber
+  overdue: '#EF4444',    // Red
+
+  // System
+  border: '#2D2640',
+  error: '#EF4444',
+  success: '#10B981',
 };
 
 export const spacing = {
