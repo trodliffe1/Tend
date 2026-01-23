@@ -1,31 +1,31 @@
 export const colors = {
-  // Primary: Cosmic purple
-  primary: '#8B5CF6',
-  primaryLight: '#A78BFA',
-  primaryDark: '#6D28D9',
+  // Primary: Terminal green
+  primary: '#22CC22',
+  primaryLight: '#33FF33',
+  primaryDark: '#1A9A1A',
 
-  // Secondary: Stardust
-  secondary: '#E0E7FF',
+  // Secondary: Amber
+  secondary: '#FFAA00',
 
-  // Dark space backgrounds
-  background: '#0F0B1A',
-  surface: '#1A1625',
-  surfaceElevated: '#252136',
+  // CRT black backgrounds
+  background: '#000000',
+  surface: '#0A0A0A',
+  surfaceElevated: '#111111',
 
-  // Light text for dark backgrounds
-  text: '#F1F5F9',
-  textSecondary: '#94A3B8',
-  textLight: '#64748B',
+  // CRT text colors - green based (darker than healthy status)
+  text: '#22CC22',           // Darker green for main text
+  textSecondary: '#1A9A1A',  // Dimmer green
+  textLight: '#117711',      // Muted green
 
-  // Status colors (vibrant for dark mode)
-  healthy: '#10B981',    // Emerald
-  dueSoon: '#FBBF24',    // Amber
-  overdue: '#EF4444',    // Red
+  // Status colors (high contrast CRT)
+  healthy: '#33FF33',    // Green only for healthy status
+  dueSoon: '#FFAA00',    // Amber
+  overdue: '#FF3333',    // Bright red
 
   // System
-  border: '#2D2640',
-  error: '#EF4444',
-  success: '#10B981',
+  border: '#1A9A1A',     // Green border (matches textSecondary)
+  error: '#FF3333',
+  success: '#33FF33',
 };
 
 export const spacing = {
@@ -37,11 +37,11 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  full: 9999,
+  sm: 0,
+  md: 0,
+  lg: 0,
+  xl: 0,
+  full: 0,  // Sharp corners everywhere - DOS style
 };
 
 export const typography = {

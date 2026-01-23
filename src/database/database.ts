@@ -347,3 +347,68 @@ export async function exportAllData(): Promise<{ persons: Person[]; settings: Ap
   const settings = await getSettings();
   return { persons, settings };
 }
+
+export async function importAllData(data: { persons: Person[]; settings: AppSettings }): Promise<void> {
+  const database = await getDatabase();
+
+  // Clear existing data (order matters due to foreign keys)
+  await database.execAsync('DELETE FROM interactions');
+  await database.execAsync('DELETE FROM notes');
+  await database.execAsync('DELETE FROM family_members');
+  await database.execAsync('DELETE FROM persons');
+
+  // Import persons with their related data
+  for (const person of data.persons) {
+    // Insert person
+    await database.runAsync(
+      `INSERT INTO persons (id, name, photo, relationshipType, frequency, lastContactDate, birthday, anniversary, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        person.id,
+        person.name,
+        person.photo || null,
+        person.relationshipType,
+        person.frequency,
+        person.lastContactDate,
+        person.birthday || null,
+        person.anniversary || null,
+        person.createdAt,
+      ]
+    );
+
+    // Insert spouse if exists
+    if (person.spouse) {
+      await database.runAsync(
+        'INSERT INTO family_members (id, personId, memberType, name, birthday, info) VALUES (?, ?, ?, ?, ?, ?)',
+        [person.spouse.id, person.id, 'spouse', person.spouse.name, person.spouse.birthday || null, person.spouse.info || null]
+      );
+    }
+
+    // Insert kids
+    for (const kid of person.kids || []) {
+      await database.runAsync(
+        'INSERT INTO family_members (id, personId, memberType, name, birthday, info) VALUES (?, ?, ?, ?, ?, ?)',
+        [kid.id, person.id, 'kid', kid.name, kid.birthday || null, kid.info || null]
+      );
+    }
+
+    // Insert notes
+    for (const note of person.notes || []) {
+      await database.runAsync(
+        'INSERT INTO notes (id, personId, content, createdAt) VALUES (?, ?, ?, ?)',
+        [note.id, person.id, note.content, note.createdAt]
+      );
+    }
+
+    // Insert interactions
+    for (const interaction of person.interactions || []) {
+      await database.runAsync(
+        'INSERT INTO interactions (id, personId, type, date, note) VALUES (?, ?, ?, ?, ?)',
+        [interaction.id, person.id, interaction.type, interaction.date, interaction.note || null]
+      );
+    }
+  }
+
+  // Import settings
+  await updateSettings(data.settings);
+}

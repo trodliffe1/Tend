@@ -7,17 +7,47 @@ import {
   Switch,
   TouchableOpacity,
   Alert,
-  Share,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { colors, spacing, borderRadius } from '../constants/theme';
+
+type RootStackParamList = {
+  MainTabs: undefined;
+  PersonDetail: { personId: string };
+  AddEditPerson: { personId?: string };
+  BackupRestore: undefined;
+  LocalBackup: undefined;
+};
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function SettingsScreen() {
-  const { settings, updateSettings, exportData } = useApp();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { settings, updateSettings } = useApp();
+  const { user, signOut, loading: authLoading } = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+          },
+        },
+      ]
+    );
+  };
 
   const handleToggleNotifications = async (enabled: boolean) => {
     const newSettings = {
@@ -39,18 +69,6 @@ export default function SettingsScreen() {
     };
     setLocalSettings(newSettings);
     await updateSettings(newSettings);
-  };
-
-  const handleExportData = async () => {
-    try {
-      const data = await exportData();
-      await Share.share({
-        message: data,
-        title: 'Orbyt - Exported Data',
-      });
-    } catch (error) {
-      Alert.alert('Export Failed', 'Could not export data. Please try again.');
-    }
   };
 
   const handleToggleEarlyWarning = async (enabled: boolean) => {
@@ -265,11 +283,27 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Data</Text>
 
-          <TouchableOpacity style={styles.settingRow} onPress={handleExportData}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => navigation.navigate('BackupRestore')}
+          >
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Export Data</Text>
+              <Text style={styles.settingLabel}>Cloud Backup</Text>
               <Text style={styles.settingDescription}>
-                Download all your data as JSON
+                Encrypted backup to restore on new devices
+              </Text>
+            </View>
+            <Text style={styles.arrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => navigation.navigate('LocalBackup')}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Local Backup</Text>
+              <Text style={styles.settingDescription}>
+                Export or import data as JSON file
               </Text>
             </View>
             <Text style={styles.arrow}>→</Text>
@@ -287,6 +321,28 @@ export default function SettingsScreen() {
             </Text>
             <Text style={styles.versionText}>Version 1.0.0</Text>
           </View>
+        </View>
+
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+
+          <View style={styles.accountCard}>
+            <Text style={styles.accountLabel}>SIGNED IN AS</Text>
+            <Text style={styles.accountEmail}>{user?.email ?? 'Unknown'}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+            disabled={authLoading}
+          >
+            {authLoading ? (
+              <ActivityIndicator color={colors.error} />
+            ) : (
+              <Text style={styles.signOutText}>SIGN OUT</Text>
+            )}
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -396,5 +452,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textLight,
     marginTop: spacing.md,
+  },
+  accountCard: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+  },
+  accountLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
+  accountEmail: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'monospace',
+  },
+  signOutButton: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.error,
+  },
+  signOutText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.error,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
   },
 });

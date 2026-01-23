@@ -6,23 +6,24 @@
   <title>Orbyt - Keep Your People in Orbit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #8B5CF6;
-      --primary-light: #A78BFA;
-      --primary-dark: #6D28D9;
-      --secondary: #E0E7FF;
-      --background: #0F0B1A;
-      --surface: #1A1625;
-      --surface-elevated: #252136;
-      --text: #F1F5F9;
-      --text-secondary: #94A3B8;
-      --text-light: #64748B;
-      --healthy: #10B981;
-      --due-soon: #FBBF24;
-      --overdue: #EF4444;
-      --border: #2D2640;
+      --primary: #22CC22;
+      --primary-bright: #33FF33;
+      --primary-dim: #1A9A1A;
+      --primary-dark: #117711;
+      --secondary: #FFAA00;
+      --background: #000000;
+      --surface: #0A0A0A;
+      --surface-elevated: #111111;
+      --text: #22CC22;
+      --text-secondary: #1A9A1A;
+      --text-dim: #117711;
+      --healthy: #33FF33;
+      --due-soon: #FFAA00;
+      --overdue: #FF3333;
+      --border: #1A9A1A;
     }
 
     * {
@@ -32,10 +33,69 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'JetBrains Mono', monospace;
       background-color: var(--background);
       color: var(--text);
       line-height: 1.6;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* CRT Scanline Effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      z-index: 1000;
+    }
+
+    /* CRT Flicker */
+    @keyframes flicker {
+      0% { opacity: 0.97; }
+      5% { opacity: 0.95; }
+      10% { opacity: 0.97; }
+      15% { opacity: 0.94; }
+      20% { opacity: 0.98; }
+      100% { opacity: 0.97; }
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+      z-index: 999;
+    }
+
+    /* Cursor blink */
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 1.2em;
+      background: var(--primary);
+      animation: blink 1s infinite;
+      vertical-align: middle;
+      margin-left: 2px;
     }
 
     /* Header */
@@ -46,86 +106,136 @@
       align-items: center;
       max-width: 1200px;
       margin: 0 auto;
+      border-bottom: 2px solid var(--border);
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       font-size: 1.5rem;
       font-weight: 700;
       color: var(--primary);
+      letter-spacing: 3px;
+      text-transform: uppercase;
     }
 
     .logo-icon {
-      font-size: 1.75rem;
+      font-size: 1.5rem;
     }
 
-    .coming-soon-badge {
-      background: var(--surface-elevated);
-      color: var(--primary-light);
+    .status-badge {
+      background: var(--surface);
+      color: var(--secondary);
       padding: 0.5rem 1rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      border: 1px solid var(--border);
+      border: 2px solid var(--secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
 
     /* Hero Section */
     .hero {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 4rem 2rem 6rem;
+      padding: 5rem 2rem 6rem;
       text-align: center;
     }
 
-    .hero-icon {
-      font-size: 5rem;
-      margin-bottom: 1.5rem;
+    .terminal-window {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      max-width: 700px;
+      margin: 0 auto 3rem;
+      text-align: left;
+    }
+
+    .terminal-header {
+      background: var(--surface-elevated);
+      padding: 0.5rem 1rem;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .terminal-title {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .terminal-body {
+      padding: 1.5rem;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    .terminal-line {
+      margin-bottom: 0.5rem;
+    }
+
+    .terminal-prompt {
+      color: var(--primary-bright);
+    }
+
+    .terminal-command {
+      color: var(--text);
+    }
+
+    .terminal-output {
+      color: var(--text-secondary);
+      padding-left: 1rem;
     }
 
     .hero h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--text);
+      font-family: 'VT323', monospace;
+      font-size: 4rem;
+      font-weight: 400;
+      color: var(--primary-bright);
       margin-bottom: 1.5rem;
-      line-height: 1.2;
-    }
-
-    .hero h1 span {
-      color: var(--primary);
+      line-height: 1.1;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-dim);
     }
 
     .hero-subtitle {
-      font-size: 1.25rem;
+      font-size: 1rem;
       color: var(--text-secondary);
       max-width: 650px;
       margin: 0 auto 2.5rem;
+      line-height: 1.8;
     }
 
     .hero-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
+      display: inline-block;
       background: var(--primary);
-      color: white;
+      color: var(--background);
       padding: 1rem 2rem;
-      border-radius: 12px;
-      font-size: 1.125rem;
-      font-weight: 600;
+      font-size: 0.875rem;
+      font-weight: 700;
       text-decoration: none;
-      transition: background 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border: 2px solid var(--primary);
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
     .hero-cta:hover {
-      background: var(--primary-dark);
+      background: var(--background);
+      color: var(--primary);
+      box-shadow: 0 0 20px var(--primary-dim);
     }
 
-    /* Status Ring Preview */
+    /* Status Preview */
     .status-preview {
       display: flex;
       justify-content: center;
-      gap: 2rem;
+      gap: 1.5rem;
       margin-top: 4rem;
       flex-wrap: wrap;
     }
@@ -135,44 +245,43 @@
       align-items: center;
       gap: 0.75rem;
       background: var(--surface);
-      padding: 0.75rem 1.5rem;
-      border-radius: 9999px;
-      border: 1px solid var(--border);
+      padding: 0.75rem 1.25rem;
+      border: 2px solid var(--border);
     }
 
-    .status-ring {
-      width: 24px;
+    .health-bar {
+      width: 8px;
       height: 24px;
-      border-radius: 50%;
-      border: 3px solid;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
       position: relative;
+      overflow: hidden;
     }
 
-    .status-ring::after {
-      content: '';
+    .health-bar-fill {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--surface);
+      bottom: 0;
+      left: 0;
+      right: 0;
+      transition: height 0.3s ease;
     }
 
-    .status-ring.healthy {
-      border-color: var(--healthy);
+    .health-bar.healthy .health-bar-fill {
+      height: 100%;
+      background: var(--healthy);
+      box-shadow: 0 0 6px var(--healthy);
     }
 
-    .status-ring.due-soon {
-      border-color: var(--due-soon);
-      border-right-color: transparent;
+    .health-bar.due-soon .health-bar-fill {
+      height: 50%;
+      background: var(--due-soon);
+      box-shadow: 0 0 6px var(--due-soon);
     }
 
-    .status-ring.overdue {
-      border-color: var(--overdue);
-      border-right-color: transparent;
-      border-bottom-color: transparent;
+    .health-bar.overdue .health-bar-fill {
+      height: 15%;
+      background: var(--overdue);
+      box-shadow: 0 0 6px var(--overdue);
       animation: pulse 2s ease-in-out infinite;
     }
 
@@ -182,8 +291,10 @@
     }
 
     .status-text {
-      font-size: 0.875rem;
-      font-weight: 500;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
     .status-healthy { color: var(--healthy); }
@@ -194,44 +305,64 @@
     .problem {
       background: var(--surface);
       padding: 5rem 2rem;
+      border-top: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
     }
 
     .problem-content {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
+    }
+
+    .section-header {
       text-align: center;
+      margin-bottom: 3rem;
     }
 
-    .problem h2 {
-      font-size: 2rem;
-      margin-bottom: 2rem;
-      color: var(--text);
-    }
-
-    .problem-items {
-      text-align: left;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .problem-item {
-      background: var(--surface-elevated);
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-      border: 1px solid var(--border);
-    }
-
-    .problem-item strong {
-      color: var(--primary-light);
-      display: block;
+    .section-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
       margin-bottom: 0.5rem;
     }
 
-    .problem-item p {
-      font-size: 1rem;
+    .section-title {
+      font-family: 'VT323', monospace;
+      font-size: 2.5rem;
+      color: var(--primary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .problem-card {
+      background: var(--background);
+      padding: 1.5rem;
+      border: 2px solid var(--border);
+    }
+
+    .problem-card-header {
+      color: var(--secondary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .problem-card p {
+      font-size: 0.875rem;
       color: var(--text-secondary);
-      margin: 0;
+      line-height: 1.7;
     }
 
     /* Features Section */
@@ -241,46 +372,49 @@
       padding: 5rem 2rem;
     }
 
-    .features h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 3rem;
-    }
-
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
     }
 
     .feature-card {
       background: var(--surface);
-      padding: 2rem;
-      border-radius: 16px;
-      border: 1px solid var(--border);
+      padding: 1.5rem;
+      border: 2px solid var(--border);
+      transition: border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--primary);
     }
 
     .feature-icon {
-      font-size: 2.5rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
+      display: inline-block;
     }
 
     .feature-card h3 {
-      font-size: 1.25rem;
+      font-size: 0.875rem;
       margin-bottom: 0.75rem;
-      color: var(--text);
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .feature-card p {
       color: var(--text-secondary);
-      font-size: 0.95rem;
+      font-size: 0.875rem;
+      line-height: 1.7;
     }
 
     /* How It Works */
     .how-it-works {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      background: var(--surface);
       padding: 5rem 2rem;
-      color: white;
+      border-top: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
     }
 
     .how-it-works-content {
@@ -288,44 +422,44 @@
       margin: 0 auto;
     }
 
-    .how-it-works h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 3rem;
-    }
-
     .steps {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 2rem;
-      text-align: center;
+      margin-top: 3rem;
     }
 
     .step {
+      text-align: center;
       padding: 1.5rem;
     }
 
     .step-number {
       width: 48px;
       height: 48px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
+      background: var(--background);
+      border: 2px solid var(--primary);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.25rem;
       font-weight: 700;
+      color: var(--primary);
       margin: 0 auto 1rem;
     }
 
     .step h3 {
-      font-size: 1.125rem;
+      font-size: 0.875rem;
       margin-bottom: 0.5rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .step p {
-      font-size: 0.9rem;
-      opacity: 0.9;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
     }
 
     /* Coming Soon Section */
@@ -336,26 +470,26 @@
       text-align: center;
     }
 
-    .coming-soon-icon {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-    }
-
     .coming-soon h2 {
-      font-size: 2rem;
+      font-family: 'VT323', monospace;
+      font-size: 2.5rem;
+      color: var(--primary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
       margin-bottom: 1rem;
     }
 
     .coming-soon p {
       color: var(--text-secondary);
-      font-size: 1.125rem;
+      font-size: 0.9rem;
       margin-bottom: 2rem;
+      line-height: 1.7;
     }
 
     .notify-form {
       display: flex;
-      gap: 0.75rem;
-      max-width: 450px;
+      gap: 0;
+      max-width: 500px;
       margin: 0 auto;
       flex-wrap: wrap;
       justify-content: center;
@@ -363,11 +497,11 @@
 
     .notify-form input {
       flex: 1;
-      min-width: 250px;
+      min-width: 280px;
       padding: 1rem 1.25rem;
       border: 2px solid var(--border);
-      border-radius: 12px;
-      font-size: 1rem;
+      border-right: none;
+      font-size: 0.875rem;
       font-family: inherit;
       background: var(--surface);
       color: var(--text);
@@ -375,7 +509,7 @@
     }
 
     .notify-form input::placeholder {
-      color: var(--text-light);
+      color: var(--text-dim);
     }
 
     .notify-form input:focus {
@@ -385,19 +519,43 @@
 
     .notify-form button {
       background: var(--primary);
-      color: white;
-      border: none;
+      color: var(--background);
+      border: 2px solid var(--primary);
       padding: 1rem 1.5rem;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 0.75rem;
+      font-weight: 700;
       font-family: inherit;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
 
     .notify-form button:hover {
-      background: var(--primary-dark);
+      background: var(--background);
+      color: var(--primary);
+    }
+
+    @media (max-width: 500px) {
+      .notify-form input {
+        border-right: 2px solid var(--border);
+        border-bottom: none;
+      }
+
+      .notify-form button {
+        width: 100%;
+      }
+    }
+
+    /* ASCII Art */
+    .ascii-art {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      white-space: pre;
+      line-height: 1.2;
+      margin: 2rem 0;
+      text-align: center;
     }
 
     /* Footer */
@@ -405,42 +563,53 @@
       background: var(--surface);
       padding: 2rem;
       text-align: center;
-      border-top: 1px solid var(--border);
-    }
-
-    footer p {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
+      border-top: 2px solid var(--border);
     }
 
     footer .logo {
       justify-content: center;
-      margin-bottom: 0.5rem;
-      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    footer p {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
     }
 
     /* Responsive */
     @media (max-width: 768px) {
       .hero h1 {
-        font-size: 2.25rem;
+        font-size: 2.5rem;
+        letter-spacing: 2px;
       }
 
       .hero-subtitle {
-        font-size: 1.1rem;
+        font-size: 0.9rem;
       }
 
-      .hero-icon {
-        font-size: 4rem;
+      .terminal-body {
+        font-size: 0.8rem;
       }
 
-      .status-preview {
-        gap: 1rem;
+      .section-title {
+        font-size: 2rem;
       }
 
       header {
         flex-direction: column;
         gap: 1rem;
       }
+
+      .ascii-art {
+        font-size: 0.4rem;
+      }
+    }
+
+    /* Glow effect for headings */
+    .glow {
+      text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-dim), 0 0 30px var(--primary-dark);
     }
   </style>
 </head>
@@ -450,29 +619,62 @@
       <span class="logo-icon">🛰️</span>
       <span>Orbyt</span>
     </div>
-    <div class="coming-soon-badge">Coming Soon</div>
+    <div class="status-badge">[ Coming Soon ]</div>
   </header>
 
   <section class="hero">
-    <div class="hero-icon">🌌</div>
-    <h1>Keep your people <span>in orbit</span></h1>
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <span class="terminal-title">orbyt_terminal v1.0</span>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-line">
+          <span class="terminal-prompt">$</span>
+          <span class="terminal-command"> orbyt --status</span>
+        </div>
+        <div class="terminal-line terminal-output">
+          > Scanning social connections...
+        </div>
+        <div class="terminal-line terminal-output">
+          > 3 contacts require attention
+        </div>
+        <div class="terminal-line terminal-output">
+          > Signal strength: DEGRADING
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-prompt">$</span>
+          <span class="terminal-command"> orbyt --help</span>
+          <span class="cursor"></span>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="glow">Keep Your People<br>In Orbit</h1>
     <p class="hero-subtitle">
-      A relationship tracker for the beautifully awkward humans who struggle to stay in touch. Because in the infinite void of modern life, your connections are everything.
+      A relationship tracker for the beautifully awkward humans who struggle to stay in touch.
+      Because in the infinite void of modern life, your connections are everything.
     </p>
     <a href="#notify" class="hero-cta">
-      Get notified at launch
+      Get Launch Notification →
     </a>
+
     <div class="status-preview">
       <div class="status-item">
-        <div class="status-ring healthy"></div>
+        <div class="health-bar healthy">
+          <div class="health-bar-fill"></div>
+        </div>
         <span class="status-text status-healthy">Strong Signal</span>
       </div>
       <div class="status-item">
-        <div class="status-ring due-soon"></div>
+        <div class="health-bar due-soon">
+          <div class="health-bar-fill"></div>
+        </div>
         <span class="status-text status-due-soon">Fading</span>
       </div>
       <div class="status-item">
-        <div class="status-ring overdue"></div>
+        <div class="health-bar overdue">
+          <div class="health-bar-fill"></div>
+        </div>
         <span class="status-text status-overdue">Lost Contact</span>
       </div>
     </div>
@@ -480,55 +682,67 @@
 
   <section class="problem">
     <div class="problem-content">
-      <h2>Humans were not meant to drift alone</h2>
-      <div class="problem-items">
-        <div class="problem-item">
-          <strong>New parents:</strong>
-          <p>You've been cut adrift from your friend group. Between feeds and naps, your social orbit has collapsed. It's not that you don't care—you're just surviving. But isolation hits hard.</p>
+      <div class="section-header">
+        <div class="section-label">// System Alert</div>
+        <h2 class="section-title">Connection Failures Detected</h2>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-card-header">
+            <span>▸</span> New Parents
+          </div>
+          <p>You've been cut adrift from your friend group. Between feeds and naps, your social orbit has collapsed. It's not that you don't care—you're just surviving.</p>
         </div>
-        <div class="problem-item">
-          <strong>Introverts:</strong>
-          <p>First contact is hard. Second contact is harder. Your social battery is finite, but so are your friendships if you don't recharge them. You need a system, not guilt.</p>
+        <div class="problem-card">
+          <div class="problem-card-header">
+            <span>▸</span> Introverts
+          </div>
+          <p>First contact is hard. Second contact is harder. Your social battery is finite, but so are your friendships if you don't recharge them.</p>
         </div>
-        <div class="problem-item">
-          <strong>ADHD brains:</strong>
-          <p>Out of sight, out of mind—it's not a character flaw, it's how you're wired. Communication failures happen. Loneliness doesn't have to.</p>
+        <div class="problem-card">
+          <div class="problem-card-header">
+            <span>▸</span> ADHD Brains
+          </div>
+          <p>Out of sight, out of mind—it's not a character flaw, it's how you're wired. You need a system, not guilt.</p>
         </div>
       </div>
     </div>
   </section>
 
   <section class="features">
-    <h2>How Orbyt keeps you connected</h2>
+    <div class="section-header">
+      <div class="section-label">// System Capabilities</div>
+      <h2 class="section-title">Signal Maintenance Protocol</h2>
+    </div>
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">📡</div>
-        <h3>Track signal strength</h3>
+        <h3>Track Signal Strength</h3>
         <p>Set personalized frequencies for each connection. Daily check-ins for your partner, weekly pings to your parents, monthly signals to distant friends.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔔</div>
-        <h3>Gentle reminders</h3>
+        <h3>Gentle Reminders</h3>
         <p>Receive thoughtful nudges when someone's drifting out of range. Never let important connections fade into the void.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📝</div>
-        <h3>Context notes</h3>
+        <h3>Context Notes</h3>
         <p>Remember the little things. Store notes like "ask about the job interview" so every conversation feels personal and meaningful.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">💑</div>
-        <h3>Date night ideas</h3>
+        <div class="feature-icon">💕</div>
+        <h3>Date Night Ideas</h3>
         <p>Stuck in a rut? Spin for a random date idea from over 40 curated suggestions, then add it straight to your calendar.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔒</div>
-        <h3>Private by design</h3>
-        <p>All your data stays on your device. No accounts, no cloud sync, no tracking. Your connections are yours alone.</p>
+        <h3>Privacy First</h3>
+        <p>Your data stays on your device by default. Optional encrypted cloud backup means only you can access your information.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🧠</div>
-        <h3>Built for your brain</h3>
+        <h3>Built For Your Brain</h3>
         <p>No guilt trips, no social pressure. Just a calm, focused tool to help you maintain the connections your mental health depends on.</p>
       </div>
     </div>
@@ -536,26 +750,29 @@
 
   <section class="how-it-works">
     <div class="how-it-works-content">
-      <h2>Simple as satellite navigation</h2>
+      <div class="section-header">
+        <div class="section-label">// Operating Procedure</div>
+        <h2 class="section-title">How It Works</h2>
+      </div>
       <div class="steps">
         <div class="step">
-          <div class="step-number">1</div>
-          <h3>Map your orbit</h3>
+          <div class="step-number">01</div>
+          <h3>Map Your Orbit</h3>
           <p>Add the people who matter and set how often you'd like to establish contact.</p>
         </div>
         <div class="step">
-          <div class="step-number">2</div>
-          <h3>Maintain signal</h3>
+          <div class="step-number">02</div>
+          <h3>Maintain Signal</h3>
           <p>Log your interactions with a tap. Watch your connections stay strong.</p>
         </div>
         <div class="step">
-          <div class="step-number">3</div>
-          <h3>Get gentle pings</h3>
+          <div class="step-number">03</div>
+          <h3>Get Gentle Pings</h3>
           <p>Receive reminders when someone's drifting before they're lost to the void.</p>
         </div>
         <div class="step">
-          <div class="step-number">4</div>
-          <h3>Stay connected</h3>
+          <div class="step-number">04</div>
+          <h3>Stay Connected</h3>
           <p>Build lasting habits that keep your important humans in close orbit.</p>
         </div>
       </div>
@@ -563,14 +780,21 @@
   </section>
 
   <section class="coming-soon" id="notify">
-    <div class="coming-soon-icon">🚀</div>
-    <h2>Launching soon on iOS and Android</h2>
+    <pre class="ascii-art">
+    ┌─────────────────────────────────────┐
+    │  ◉ TRANSMISSION INCOMING...        │
+    │  ◉ SOURCE: ORBYT MISSION CONTROL   │
+    │  ◉ STATUS: LAUNCH IMMINENT         │
+    └─────────────────────────────────────┘
+    </pre>
+    <h2>Launching Soon</h2>
     <p>
-      Orbyt is currently in development. Leave your email to be the first to know when it launches.
+      Orbyt is currently in development for iOS and Android.<br>
+      Enter your coordinates to receive launch notification.
     </p>
     <form class="notify-form" onsubmit="handleSubmit(event)">
-      <input type="email" placeholder="Enter your email" required>
-      <button type="submit">Notify me</button>
+      <input type="email" placeholder="operator@email.com" required>
+      <button type="submit">Notify Me</button>
     </form>
   </section>
 
@@ -579,17 +803,28 @@
       <span class="logo-icon">🛰️</span>
       <span>Orbyt</span>
     </div>
-    <p>Helping you maintain signal with the humans who matter.</p>
+    <p>Maintaining signal with the humans who matter.</p>
   </footer>
 
   <script>
     function handleSubmit(event) {
       event.preventDefault();
-      const email = event.target.querySelector('input').value;
+      const input = event.target.querySelector('input');
+      const email = input.value;
       // Replace with your actual form handling
-      alert('Thanks! We\'ll ping you when Orbyt launches.');
+      alert('[ TRANSMISSION RECEIVED ]\n\nCoordinates logged. You will be notified when Orbyt launches.');
       event.target.reset();
     }
+
+    // Add typing effect to terminal
+    document.addEventListener('DOMContentLoaded', function() {
+      const cursor = document.querySelector('.cursor');
+      if (cursor) {
+        setInterval(() => {
+          cursor.style.opacity = cursor.style.opacity === '0' ? '1' : '0';
+        }, 530);
+      }
+    });
   </script>
 </body>
 </html>

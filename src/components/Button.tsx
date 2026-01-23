@@ -57,23 +57,27 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
   },
   primary: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.background,
+    borderColor: colors.primary,
   },
   secondary: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.background,
+    borderColor: colors.secondary,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: colors.primary,
   },
   danger: {
-    backgroundColor: colors.error,
+    backgroundColor: colors.background,
+    borderColor: colors.error,
   },
   smallButton: {
     paddingVertical: spacing.xs,
@@ -92,27 +96,30 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '600',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   primaryText: {
-    color: colors.surface,
+    color: colors.primary,
   },
   secondaryText: {
-    color: colors.text,
+    color: colors.secondary,
   },
   outlineText: {
     color: colors.primary,
   },
   dangerText: {
-    color: colors.surface,
+    color: colors.error,
   },
   smallText: {
-    fontSize: 14,
+    fontSize: 12,
   },
   mediumText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   largeText: {
-    fontSize: 18,
+    fontSize: 16,
   },
   disabledText: {
     opacity: 0.7,

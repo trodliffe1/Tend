@@ -23,14 +23,16 @@ export default function HealthBar({
   const barOpacity = status === 'overdue' ? 0.6 : 1;
 
   return (
-    <View style={[styles.container, { height, width, borderRadius: width / 2 }]}>
+    <View style={[styles.container, { height, width, borderRadius: 0 }]}>
       {/* Background track */}
       <View
         style={[
           styles.track,
           {
-            backgroundColor: statusColor + '30',
-            borderRadius: width / 2,
+            backgroundColor: '#000000',
+            borderRadius: 0,
+            borderWidth: 2,
+            borderColor: statusColor,
           }
         ]}
       />
@@ -42,7 +44,7 @@ export default function HealthBar({
           {
             backgroundColor: statusColor,
             height: `${fillHeight}%`,
-            borderRadius: width / 2,
+            borderRadius: 0,
             opacity: barOpacity,
           },
         ]}

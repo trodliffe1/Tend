@@ -14,22 +14,30 @@ Orbyt is a mobile app that helps users maintain meaningful connections with frie
 - **Framework**: React Native 0.81.5 with Expo SDK 54
 - **Language**: TypeScript 5.9.2 (strict mode)
 - **Navigation**: React Navigation 7.x (bottom tabs + native stack)
-- **Database**: expo-sqlite (local-first, no backend)
-- **State Management**: React Context
+- **Database**: expo-sqlite (local-first)
+- **Authentication**: Supabase Auth with AsyncStorage session persistence
+- **State Management**: React Context (AppContext for data, AuthContext for auth)
 - **Notifications**: expo-notifications
-- **Theme**: Dark mode with cosmic purple (#8B5CF6) primary color
+- **Theme**: Dark CRT terminal theme with green (#22CC22) primary color
 
 ## Project Structure
 ```
 Tend/
-├── App.tsx                 # Main entry - navigation setup, tab bar configuration
+├── App.tsx                 # Main entry - auth flow, navigation setup, tab bar config
+├── .env                    # Supabase credentials (gitignored)
 ├── src/
-│   ├── screens/            # Main app screens
+│   ├── screens/
+│   │   ├── auth/                   # Authentication screens
+│   │   │   ├── LoginScreen.tsx     # Login with email/password
+│   │   │   ├── RegisterScreen.tsx  # Registration with password requirements
+│   │   │   └── ForgotPasswordScreen.tsx  # Password reset
 │   │   ├── HomeScreen.tsx          # Dashboard ("My Orbit") showing all connections sorted by urgency
 │   │   ├── PersonDetailScreen.tsx  # Individual person view with notes & interaction history
 │   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details)
 │   │   ├── DateNightScreen.tsx     # Random date idea generator
-│   │   └── SettingsScreen.tsx      # Notification prefs, date reminders & data export
+│   │   ├── SettingsScreen.tsx      # Notification prefs, date reminders, account & sign out
+│   │   ├── BackupRestoreScreen.tsx # Encrypted cloud backup management
+│   │   └── LocalBackupScreen.tsx   # Local JSON export/import
 │   ├── components/         # Reusable UI components
 │   │   ├── PersonCard.tsx          # Card displaying person with HealthBar
 │   │   ├── HealthBar.tsx           # Vertical health bar indicator next to avatars
@@ -37,16 +45,24 @@ Tend/
 │   │   ├── Button.tsx              # Styled button component
 │   │   └── InteractionPicker.tsx   # Modal for logging interaction types
 │   ├── context/
-│   │   └── AppContext.tsx          # Global state provider (persons, settings, CRUD ops)
+│   │   ├── AppContext.tsx          # Global state provider (persons, settings, CRUD ops)
+│   │   └── AuthContext.tsx         # Auth state provider (user, session, signIn/signUp/signOut)
+│   ├── lib/
+│   │   └── supabase.ts             # Supabase client configuration
 │   ├── database/
 │   │   └── database.ts             # SQLite operations (CRUD for persons, notes, interactions, family_members)
 │   ├── types/
-│   │   └── index.ts                # TypeScript type definitions
+│   │   ├── index.ts                # TypeScript type definitions
+│   │   └── auth.ts                 # Auth-related type definitions
 │   ├── utils/
 │   │   ├── helpers.ts              # Status calculations, date formatting, status percentage
-│   │   └── notifications.ts        # Notification scheduling & permissions (including date reminders)
+│   │   ├── notifications.ts        # Notification scheduling & permissions (including date reminders)
+│   │   ├── validation.ts           # Email/password validation, password strength checker
+│   │   ├── authErrors.ts           # Maps Supabase errors to user-friendly messages
+│   │   ├── encryption.ts           # AES encryption/decryption for cloud backup
+│   │   └── backup.ts               # Cloud backup/restore orchestration
 │   └── constants/
-│       ├── theme.ts                # Dark space theme colors, spacing, typography
+│       ├── theme.ts                # Dark CRT terminal theme colors, spacing, typography
 │       └── dateIdeas.ts            # 40+ categorized date night ideas
 ├── landing-page/
 │   └── index.html          # Marketing landing page (myorbyt.com)
@@ -114,25 +130,52 @@ The `HealthBar` component displays a vertical bar next to avatars:
 - `onTheDayEnabled`: boolean
 
 ### Navigation
+- **Auth flow**: Unauthenticated users see AuthNavigator (Login → Register/ForgotPassword)
+- **Main app**: Authenticated users see AppNavigator with bottom tabs
 - Bottom tabs: Orbit (home), Date Night, Settings
 - Stack navigator for: PersonDetail (back button shows "Back To Orbit"), AddEditPerson (modal)
 - Home screen title: "My Orbit"
 
-## Color Palette (Dark Space Theme)
+### Authentication
+- **Provider**: Supabase Auth with email/password
+- **Session persistence**: AsyncStorage (survives app restarts)
+- **Auth state**: Managed via AuthContext (user, session, loading, initialized)
+- **Protected routes**: App content only accessible when authenticated
+- **Password requirements**: 8+ chars, uppercase, lowercase, number
+- **Sign out**: Available in Settings > Account section
+
+### Encrypted Cloud Backup
+- **Location**: Settings > Your Data > Cloud Backup
+- **Encryption**: AES-256-CBC with PBKDF2 key derivation (100k iterations)
+- **Privacy**: Data encrypted client-side before upload; server only sees encrypted blob
+- **Storage**: Supabase `user_backups` table (one backup per user, overwritten on update)
+- **Recovery**: Requires backup password; cannot be recovered if password forgotten
+
+### Local Backup
+- **Location**: Settings > Your Data > Local Backup
+- **Export**: Saves all data as JSON file via share sheet (email, cloud storage, etc.)
+- **Import**: Reads JSON file via document picker, replaces all local data
+- **Format**: Unencrypted JSON containing persons array and settings object
+
+## Color Palette (CRT Terminal Theme)
 ```typescript
 colors = {
-  primary: '#8B5CF6',      // Cosmic purple
-  primaryLight: '#A78BFA',
-  primaryDark: '#6D28D9',
-  secondary: '#E0E7FF',    // Stardust
-  background: '#0F0B1A',   // Deep space
-  surface: '#1A1625',
-  surfaceElevated: '#252136',
-  text: '#F1F5F9',
-  textSecondary: '#94A3B8',
-  healthy: '#10B981',      // Emerald
-  dueSoon: '#FBBF24',      // Amber
-  overdue: '#EF4444',      // Red
+  primary: '#22CC22',      // Terminal green
+  primaryLight: '#33FF33',
+  primaryDark: '#1A9A1A',
+  secondary: '#FFAA00',    // Amber
+  background: '#000000',   // Pure black
+  surface: '#0A0A0A',
+  surfaceElevated: '#111111',
+  text: '#22CC22',         // Terminal green
+  textSecondary: '#1A9A1A',
+  textLight: '#117711',
+  healthy: '#33FF33',      // Bright green
+  dueSoon: '#FFAA00',      // Amber
+  overdue: '#FF3333',      // Bright red
+  error: '#FF3333',
+  success: '#33FF33',
+  border: '#1A9A1A',
 }
 ```
 
@@ -159,6 +202,24 @@ Expo Go always uses React Native's new architecture. The app.json setting `newAr
 ### Date Input Format
 All date fields (birthday, anniversary) use MM/DD format with auto-formatting as user types.
 
+### Supabase Auth
+- User data stored in `auth.users` (protected schema, view in Dashboard > Authentication > Users)
+- Session tokens auto-refresh via Supabase client config
+- `detectSessionInUrl: false` required for React Native (no browser redirects)
+
+### Supabase Tables
+- `user_backups` - Encrypted backup blobs (one per user, RLS-protected)
+  - Columns: id, user_id, encrypted_data, salt, iv, version, created_at, updated_at
+
+## Environment Variables
+Create a `.env` file in the Tend directory (gitignored):
+```
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Get these values from your Supabase project: Settings > API
+
 ## Running the App
 ```bash
 npm install
@@ -166,7 +227,16 @@ npx expo start
 # Press 'a' for Android, 'i' for iOS, or scan QR with Expo Go
 ```
 
+**First-time setup**: Ensure Supabase project has Email auth enabled (Authentication > Providers > Email).
+
 ## Common Tasks
+- **Register**: Launch app > Register link > fill email/password > verify email
+- **Sign in**: Launch app > enter credentials > "Establish Connection"
+- **Sign out**: Settings > Account > Sign Out
+- **Cloud backup**: Settings > Your Data > Cloud Backup > enter password > Create Backup
+- **Cloud restore**: Settings > Your Data > Cloud Backup > enter password > Restore from Backup
+- **Local export**: Settings > Your Data > Local Backup > Export Data
+- **Local import**: Settings > Your Data > Local Backup > Import Data > select JSON file
 - **Add a person**: Tap + FAB on Orbit screen → "Launch into Orbit"
 - **Add family details**: When adding/editing a person, scroll down to add spouse and kids with birthdays
 - **Log contact**: Tap "Log Contact" on person card or detail screen

@@ -8,6 +8,7 @@ interface AppContextType {
   settings: AppSettings;
   loading: boolean;
   refreshPersons: () => Promise<void>;
+  refreshData: () => Promise<void>;
   addPerson: (person: Omit<Person, 'id' | 'notes' | 'interactions' | 'createdAt'>) => Promise<void>;
   updatePerson: (person: Partial<Person> & { id: string }) => Promise<void>;
   deletePerson: (id: string) => Promise<void>;
@@ -49,6 +50,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const data = await db.getSettings();
     setSettings(data);
   }, []);
+
+  const refreshData = useCallback(async () => {
+    await refreshPersons();
+    await loadSettings();
+  }, [refreshPersons, loadSettings]);
 
   useEffect(() => {
     async function init() {
@@ -124,6 +130,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         settings,
         loading,
         refreshPersons,
+        refreshData,
         addPerson,
         updatePerson,
         deletePerson,

@@ -7,12 +7,18 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AppProvider, useApp } from './src/context/AppContext';
 import HomeScreen from './src/screens/HomeScreen';
 import PersonDetailScreen from './src/screens/PersonDetailScreen';
 import AddEditPersonScreen from './src/screens/AddEditPersonScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import DateNightScreen from './src/screens/DateNightScreen';
+import LoginScreen from './src/screens/auth/LoginScreen';
+import RegisterScreen from './src/screens/auth/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
+import BackupRestoreScreen from './src/screens/BackupRestoreScreen';
+import LocalBackupScreen from './src/screens/LocalBackupScreen';
 import {
   requestNotificationPermissions,
   scheduleReminderNotifications,
@@ -24,6 +30,8 @@ type RootStackParamList = {
   MainTabs: undefined;
   PersonDetail: { personId: string };
   AddEditPerson: { personId?: string };
+  BackupRestore: undefined;
+  LocalBackup: undefined;
 };
 
 type TabParamList = {
@@ -32,8 +40,15 @@ type TabParamList = {
   Settings: undefined;
 };
 
+type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+};
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 
 function TabIcon({ name }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
@@ -57,19 +72,23 @@ function MainTabs() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarActiveBackgroundColor: colors.surfaceElevated,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
+          borderTopWidth: 2,
           height: 90,
           paddingTop: 5,
           paddingBottom: 20,
         },
         tabBarItemStyle: {
           marginVertical: 5,
-          borderRadius: 10,
+          borderRadius: 0,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: '500',
+          fontFamily: 'monospace',
+          textTransform: 'uppercase',
+          letterSpacing: 1,
         },
         headerStyle: {
           backgroundColor: colors.background,
@@ -104,6 +123,41 @@ function MainTabs() {
         }}
       />
     </Tab.Navigator>
+  );
+}
+
+function AuthNavigator() {
+  return (
+    <AuthStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.primary,
+          headerShadowVisible: false,
+        }}
+      />
+      <AuthStack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.primary,
+          headerShadowVisible: false,
+        }}
+      />
+    </AuthStack.Navigator>
   );
 }
 
@@ -177,18 +231,59 @@ function AppNavigator() {
             presentation: 'modal',
           }}
         />
+        <Stack.Screen
+          name="BackupRestore"
+          component={BackupRestoreScreen}
+          options={{
+            title: 'Cloud Backup',
+          }}
+        />
+        <Stack.Screen
+          name="LocalBackup"
+          component={LocalBackupScreen}
+          options={{
+            title: 'Local Backup',
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+function RootNavigator() {
+  const { user, initialized } = useAuth();
+
+  if (!initialized) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Initializing secure connection...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <NavigationContainer>
+        <AuthNavigator />
+      </NavigationContainer>
+    );
+  }
+
+  return (
+    <AppProvider>
+      <AppNavigator />
+    </AppProvider>
   );
 }
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AppProvider>
+      <AuthProvider>
         <StatusBar style="light" />
-        <AppNavigator />
-      </AppProvider>
+        <RootNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
