@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1"></script>
   <style>
     :root {
       --primary: #22CC22;
@@ -558,6 +559,79 @@
       }
     }
 
+    /* Honeypot - hidden from real users */
+    .honeypot {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+      height: 0;
+      width: 0;
+      pointer-events: none;
+    }
+
+    /* Form States */
+    .notify-form.loading button {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .notify-form.loading button::after {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .form-message {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .form-message.success {
+      color: var(--healthy);
+      border: 2px solid var(--healthy);
+      background: rgba(34, 204, 34, 0.1);
+    }
+
+    .form-message.duplicate {
+      color: var(--secondary);
+      border: 2px solid var(--secondary);
+      background: rgba(255, 170, 0, 0.1);
+    }
+
+    .form-message.error {
+      color: var(--overdue);
+      border: 2px solid var(--overdue);
+      background: rgba(255, 51, 51, 0.1);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .notify-form.shake {
+      animation: shake 0.4s ease-in-out;
+    }
+
     /* ASCII Art */
     .ascii-art {
       font-family: 'JetBrains Mono', monospace;
@@ -855,10 +929,12 @@
       Orbyt is currently in development for iOS and Android.<br>
       Enter your coordinates to receive launch notification.
     </p>
-    <form class="notify-form" onsubmit="handleSubmit(event)">
-      <input type="email" placeholder="operator@email.com" required>
+    <form class="notify-form" onsubmit="handleSubmit(event)" novalidate>
+      <input type="text" name="website" class="honeypot" autocomplete="off" tabindex="-1">
+      <input type="email" name="email" id="email" placeholder="operator@email.com" required>
       <button type="submit">Notify Me</button>
     </form>
+    <div id="form-message" class="form-message" style="display: none;"></div>
   </section>
 
   <footer>
@@ -879,13 +955,99 @@
   </footer>
 
   <script>
-    function handleSubmit(event) {
+    // Initialize Supabase client
+    const SUPABASE_URL = 'https://ldyjnstnhjktnhjvkmed.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_6O-G-auwrIpfpknUKO2EOQ_Rt8FMpYU';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Collect metadata for analytics
+    function getMetadata() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return {
+        utm_source: urlParams.get('utm_source'),
+        utm_medium: urlParams.get('utm_medium'),
+        utm_campaign: urlParams.get('utm_campaign'),
+        utm_term: urlParams.get('utm_term'),
+        utm_content: urlParams.get('utm_content'),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        language: navigator.language
+      };
+    }
+
+    // Show message below form
+    function showMessage(type, text) {
+      const messageEl = document.getElementById('form-message');
+      messageEl.className = `form-message ${type}`;
+      messageEl.textContent = text;
+      messageEl.style.display = 'block';
+    }
+
+    // Hide message
+    function hideMessage() {
+      const messageEl = document.getElementById('form-message');
+      messageEl.style.display = 'none';
+    }
+
+    // Email validation
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    async function handleSubmit(event) {
       event.preventDefault();
-      const input = event.target.querySelector('input');
-      const email = input.value;
-      // Replace with your actual form handling
-      alert('[ TRANSMISSION RECEIVED ]\n\nCoordinates logged. You will be notified when Orbyt launches.');
-      event.target.reset();
+      const form = event.target;
+      const honeypot = form.querySelector('.honeypot');
+      const emailInput = form.querySelector('input[type="email"]');
+      const button = form.querySelector('button');
+      const email = emailInput.value.trim();
+
+      // Honeypot check - if filled, silently "succeed"
+      if (honeypot && honeypot.value) {
+        showMessage('success', '◉ Transmission received');
+        form.reset();
+        return;
+      }
+
+      // Validate email format
+      if (!isValidEmail(email)) {
+        form.classList.add('shake');
+        setTimeout(() => form.classList.remove('shake'), 400);
+        showMessage('error', '◉ Invalid transmission format');
+        return;
+      }
+
+      // Set loading state
+      hideMessage();
+      form.classList.add('loading');
+      button.textContent = 'Transmitting';
+
+      try {
+        const { data, error } = await supabase.rpc('add_waitlist_signup', {
+          signup_email: email.toLowerCase(),
+          signup_source: 'landing_page',
+          signup_referrer: document.referrer || null,
+          signup_user_agent: navigator.userAgent,
+          signup_metadata: getMetadata()
+        });
+
+        if (error) {
+          showMessage('error', '◉ Transmission failed - try again');
+        } else if (data && data.error === 'duplicate') {
+          showMessage('duplicate', '◉ Coordinates already registered');
+        } else {
+          showMessage('success', '◉ Transmission received - launch notification queued');
+          form.reset();
+        }
+      } catch (err) {
+        console.error('Network error:', err);
+        showMessage('error', '◉ Connection lost - try again');
+      } finally {
+        form.classList.remove('loading');
+        button.textContent = 'Notify Me';
+      }
     }
 
     // Add typing effect to terminal
