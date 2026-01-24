@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import PersonCard from '../components/PersonCard';
 import InteractionPicker from '../components/InteractionPicker';
+import { SatelliteIcon } from '../components/icons';
 import { sortByUrgency, getHealthStatus } from '../utils/helpers';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { Person, InteractionType, HealthStatus } from '../types';
@@ -58,7 +59,9 @@ export default function HomeScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyEmoji}>🛰️</Text>
+      <View style={styles.emptyIconContainer}>
+        <SatelliteIcon size={48} color={colors.primary} />
+      </View>
       <Text style={styles.emptyTitle}>Launch Your First Connection</Text>
       <Text style={styles.emptySubtitle}>
         Add the people who matter to you and we'll help you keep them in orbit
@@ -191,8 +194,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
   },
-  emptyEmoji: {
-    fontSize: 48,
+  emptyIconContainer: {
     marginBottom: spacing.md,
   },
   emptyTitle: {

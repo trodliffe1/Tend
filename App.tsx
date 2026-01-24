@@ -25,6 +25,7 @@ import {
   addNotificationResponseListener,
 } from './src/utils/notifications';
 import { colors } from './src/constants/theme';
+import { SatelliteIcon, HeartsIcon, GearIcon } from './src/components/icons';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -50,17 +51,20 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 
-function TabIcon({ name }: { name: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    Home: '🛰️',
-    DateNight: '💕',
-    Settings: '⚙️',
-  };
-  return (
-    <Text style={{ fontSize: 22 }}>
-      {icons[name]}
-    </Text>
-  );
+function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+  const iconColor = focused ? colors.primaryLight : colors.textSecondary;
+  const iconSize = 22;
+
+  switch (name) {
+    case 'Home':
+      return <SatelliteIcon size={iconSize} color={iconColor} />;
+    case 'DateNight':
+      return <HeartsIcon size={iconSize} color={iconColor} />;
+    case 'Settings':
+      return <GearIcon size={iconSize} color={iconColor} />;
+    default:
+      return null;
+  }
 }
 
 function MainTabs() {
@@ -236,6 +240,7 @@ function AppNavigator() {
           component={BackupRestoreScreen}
           options={{
             title: 'Cloud Backup',
+            headerBackTitle: 'Settings',
           }}
         />
         <Stack.Screen
@@ -243,6 +248,7 @@ function AppNavigator() {
           component={LocalBackupScreen}
           options={{
             title: 'Local Backup',
+            headerBackTitle: 'Settings',
           }}
         />
       </Stack.Navigator>

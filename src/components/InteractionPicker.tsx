@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { InteractionType, INTERACTION_LABELS } from '../types';
+import { ChatIcon, PhoneIcon, HandshakeIcon, CoupleIcon } from './icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 
 interface InteractionPickerProps {
@@ -10,12 +11,24 @@ interface InteractionPickerProps {
   showDateNight?: boolean;
 }
 
-const interactionOptions: { type: InteractionType; emoji: string }[] = [
-  { type: 'text', emoji: '💬' },
-  { type: 'call', emoji: '📞' },
-  { type: 'in-person', emoji: '🤝' },
-  { type: 'date-night', emoji: '💑' },
-];
+const getInteractionIcon = (type: InteractionType) => {
+  const iconSize = 28;
+  const iconColor = colors.primary;
+  switch (type) {
+    case 'text':
+      return <ChatIcon size={iconSize} color={iconColor} />;
+    case 'call':
+      return <PhoneIcon size={iconSize} color={iconColor} />;
+    case 'in-person':
+      return <HandshakeIcon size={iconSize} color={iconColor} />;
+    case 'date-night':
+      return <CoupleIcon size={iconSize} color={iconColor} />;
+    default:
+      return <ChatIcon size={iconSize} color={iconColor} />;
+  }
+};
+
+const interactionTypes: InteractionType[] = ['text', 'call', 'in-person', 'date-night'];
 
 export default function InteractionPicker({
   visible,
@@ -24,8 +37,8 @@ export default function InteractionPicker({
   showDateNight = false,
 }: InteractionPickerProps) {
   const options = showDateNight
-    ? interactionOptions
-    : interactionOptions.filter(o => o.type !== 'date-night');
+    ? interactionTypes
+    : interactionTypes.filter(t => t !== 'date-night');
 
   return (
     <Modal
@@ -38,17 +51,19 @@ export default function InteractionPicker({
         <View style={styles.container}>
           <Text style={styles.title}>How did you connect?</Text>
           <View style={styles.optionsContainer}>
-            {options.map(option => (
+            {options.map(type => (
               <TouchableOpacity
-                key={option.type}
+                key={type}
                 style={styles.option}
                 onPress={() => {
-                  onSelect(option.type);
+                  onSelect(type);
                   onClose();
                 }}
               >
-                <Text style={styles.emoji}>{option.emoji}</Text>
-                <Text style={styles.label}>{INTERACTION_LABELS[option.type]}</Text>
+                <View style={styles.iconContainer}>
+                  {getInteractionIcon(type)}
+                </View>
+                <Text style={styles.label}>{INTERACTION_LABELS[type]}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -102,8 +117,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.border,
   },
-  emoji: {
-    fontSize: 28,
+  iconContainer: {
     marginBottom: spacing.xs,
   },
   label: {

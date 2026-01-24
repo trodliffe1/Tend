@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { SatelliteIcon } from '../components/icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 
 type RootStackParamList = {
@@ -315,7 +316,10 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>About</Text>
 
           <View style={styles.aboutCard}>
-            <Text style={styles.aboutTitle}>Orbyt 🛰️</Text>
+            <View style={styles.aboutTitleContainer}>
+              <Text style={styles.aboutTitle}>Orbyt</Text>
+              <SatelliteIcon size={24} color={colors.text} style={styles.aboutIcon} />
+            </View>
             <Text style={styles.aboutText}>
               A relationship tracker to help you maintain signal with the humans who matter.
             </Text>
@@ -436,11 +440,18 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
   },
+  aboutTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   aboutTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.sm,
+  },
+  aboutIcon: {
+    marginLeft: spacing.sm,
   },
   aboutText: {
     fontSize: 14,

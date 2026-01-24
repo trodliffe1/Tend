@@ -8,6 +8,8 @@ import {
   Image,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -15,6 +17,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import InteractionPicker from '../components/InteractionPicker';
+import {
+  ChatIcon,
+  PhoneIcon,
+  HandshakeIcon,
+  CoupleIcon,
+  CakeIcon,
+  RingIcon,
+} from '../components/icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import {
   Person,
@@ -109,19 +119,34 @@ export default function PersonDetailScreen() {
     );
   };
 
-  const getInteractionEmoji = (type: InteractionType): string => {
-    const emojis: Record<InteractionType, string> = {
-      text: '💬',
-      call: '📞',
-      'in-person': '🤝',
-      'date-night': '💑',
-    };
-    return emojis[type];
+  const getInteractionIcon = (type: InteractionType) => {
+    const iconSize = 24;
+    const iconColor = colors.textSecondary;
+    switch (type) {
+      case 'text':
+        return <ChatIcon size={iconSize} color={iconColor} />;
+      case 'call':
+        return <PhoneIcon size={iconSize} color={iconColor} />;
+      case 'in-person':
+        return <HandshakeIcon size={iconSize} color={iconColor} />;
+      case 'date-night':
+        return <CoupleIcon size={iconSize} color={iconColor} />;
+      default:
+        return <ChatIcon size={iconSize} color={iconColor} />;
+    }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.avatarSection}>
@@ -159,13 +184,19 @@ export default function PersonDetailScreen() {
             <View style={styles.infoCard}>
               {person.birthday && (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>🎂 Birthday</Text>
+                  <View style={styles.infoLabelContainer}>
+                    <CakeIcon size={16} color={colors.textSecondary} />
+                    <Text style={styles.infoLabel}>Birthday</Text>
+                  </View>
                   <Text style={styles.infoValue}>{person.birthday}</Text>
                 </View>
               )}
               {person.anniversary && (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>💍 Anniversary</Text>
+                  <View style={styles.infoLabelContainer}>
+                    <RingIcon size={16} color={colors.textSecondary} />
+                    <Text style={styles.infoLabel}>Anniversary</Text>
+                  </View>
                   <Text style={styles.infoValue}>{person.anniversary}</Text>
                 </View>
               )}
@@ -180,7 +211,10 @@ export default function PersonDetailScreen() {
             <View style={styles.familyCard}>
               <Text style={styles.familyName}>{person.spouse.name}</Text>
               {person.spouse.birthday && (
-                <Text style={styles.familyDetail}>🎂 {person.spouse.birthday}</Text>
+                <View style={styles.familyDetailRow}>
+                  <CakeIcon size={12} color={colors.textSecondary} />
+                  <Text style={styles.familyDetail}>{person.spouse.birthday}</Text>
+                </View>
               )}
               {person.spouse.info && (
                 <Text style={styles.familyInfo}>{person.spouse.info}</Text>
@@ -197,7 +231,10 @@ export default function PersonDetailScreen() {
               <View key={kid.id} style={styles.familyCard}>
                 <Text style={styles.familyName}>{kid.name}</Text>
                 {kid.birthday && (
-                  <Text style={styles.familyDetail}>🎂 {kid.birthday}</Text>
+                  <View style={styles.familyDetailRow}>
+                    <CakeIcon size={12} color={colors.textSecondary} />
+                    <Text style={styles.familyDetail}>{kid.birthday}</Text>
+                  </View>
                 )}
                 {kid.info && (
                   <Text style={styles.familyInfo}>{kid.info}</Text>
@@ -256,7 +293,9 @@ export default function PersonDetailScreen() {
           ) : (
             person.interactions.slice(0, 10).map(interaction => (
               <View key={interaction.id} style={styles.interactionItem}>
-                <Text style={styles.interactionEmoji}>{getInteractionEmoji(interaction.type)}</Text>
+                <View style={styles.interactionIconContainer}>
+                  {getInteractionIcon(interaction.type)}
+                </View>
                 <View style={styles.interactionInfo}>
                   <Text style={styles.interactionType}>{INTERACTION_LABELS[interaction.type]}</Text>
                   <Text style={styles.interactionDate}>{formatRelativeDate(interaction.date)}</Text>
@@ -279,6 +318,7 @@ export default function PersonDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <InteractionPicker
         visible={pickerVisible}
@@ -294,6 +334,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: spacing.xl,
@@ -451,8 +494,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.border,
   },
-  interactionEmoji: {
-    fontSize: 24,
+  interactionIconContainer: {
     marginRight: spacing.md,
   },
   interactionInfo: {
@@ -513,6 +555,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
   },
+  infoLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   infoLabel: {
     fontSize: 13,
     color: colors.textSecondary,
@@ -540,10 +587,15 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     textTransform: 'uppercase',
   },
+  familyDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
   familyDetail: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
     fontFamily: 'monospace',
   },
   familyInfo: {

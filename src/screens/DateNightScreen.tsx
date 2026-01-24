@@ -12,16 +12,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Calendar from 'expo-calendar';
 import { DateIdea, dateIdeas, categoryLabels, getRandomDateIdea } from '../constants/dateIdeas';
 import Button from '../components/Button';
+import {
+  DiceIcon,
+  HouseIcon,
+  CityIcon,
+  MountainIcon,
+  LightningIcon,
+  CoupleIcon,
+  CalendarIcon,
+} from '../components/icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 
 type Category = DateIdea['category'] | 'all';
 
-const categoryEmojis: Record<Category, string> = {
-  all: '🎲',
-  home: '🏠',
-  'going-out': '🌆',
-  adventure: '🏔️',
-  quick: '⚡',
+const getCategoryIcon = (category: Category, size: number = 20, color: string = colors.textSecondary) => {
+  switch (category) {
+    case 'all':
+      return <DiceIcon size={size} color={color} />;
+    case 'home':
+      return <HouseIcon size={size} color={color} />;
+    case 'going-out':
+      return <CityIcon size={size} color={color} />;
+    case 'adventure':
+      return <MountainIcon size={size} color={color} />;
+    case 'quick':
+      return <LightningIcon size={size} color={color} />;
+    default:
+      return <DiceIcon size={size} color={color} />;
+  }
 };
 
 export default function DateNightScreen() {
@@ -122,7 +140,13 @@ export default function DateNightScreen() {
               ]}
               onPress={() => setSelectedCategory(category)}
             >
-              <Text style={styles.categoryEmoji}>{categoryEmojis[category]}</Text>
+              <View style={styles.categoryIconContainer}>
+                {getCategoryIcon(
+                  category,
+                  20,
+                  selectedCategory === category ? colors.primary : colors.textSecondary
+                )}
+              </View>
               <Text
                 style={[
                   styles.categoryText,
@@ -139,15 +163,18 @@ export default function DateNightScreen() {
         <View style={styles.ideaContainer}>
           {currentIdea ? (
             <View style={[styles.ideaCard, isSpinning && styles.ideaCardSpinning]}>
-              <Text style={styles.ideaCategoryBadge}>
-                {categoryEmojis[currentIdea.category]} {categoryLabels[currentIdea.category]}
-              </Text>
+              <View style={styles.ideaCategoryBadge}>
+                {getCategoryIcon(currentIdea.category, 16, colors.textSecondary)}
+                <Text style={styles.ideaCategoryText}>{categoryLabels[currentIdea.category]}</Text>
+              </View>
               <Text style={styles.ideaTitle}>{currentIdea.title}</Text>
               <Text style={styles.ideaDescription}>{currentIdea.description}</Text>
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>💑</Text>
+              <View style={styles.emptyIconContainer}>
+                <CoupleIcon size={64} color={colors.primary} />
+              </View>
               <Text style={styles.emptyText}>
                 Tap the button below to get a date idea!
               </Text>
@@ -165,13 +192,15 @@ export default function DateNightScreen() {
           />
 
           {currentIdea && !isSpinning && (
-            <Button
-              title="Book It 📅"
-              onPress={handleBookIt}
-              variant="outline"
-              size="large"
-              style={styles.bookButton}
-            />
+            <View style={styles.bookButtonContainer}>
+              <Button
+                title="Book It"
+                onPress={handleBookIt}
+                variant="outline"
+                size="large"
+                style={styles.bookButton}
+              />
+            </View>
           )}
         </View>
       </View>
@@ -218,8 +247,7 @@ const styles = StyleSheet.create({
   categoryButtonSelected: {
     backgroundColor: colors.primary + '20',
   },
-  categoryEmoji: {
-    fontSize: 20,
+  categoryIconContainer: {
     marginBottom: 2,
   },
   categoryText: {
@@ -249,9 +277,14 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   ideaCategoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  ideaCategoryText: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
   },
   ideaTitle: {
     fontSize: 26,
@@ -270,8 +303,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
   },
-  emptyEmoji: {
-    fontSize: 64,
+  emptyIconContainer: {
     marginBottom: spacing.md,
   },
   emptyText: {
@@ -283,7 +315,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     gap: spacing.md,
   },
+  bookButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bookButton: {
     marginTop: spacing.sm,
+    flex: 1,
   },
 });

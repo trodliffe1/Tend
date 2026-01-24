@@ -390,9 +390,20 @@
     }
 
     .feature-icon {
-      font-size: 1.5rem;
       margin-bottom: 1rem;
       display: inline-block;
+    }
+
+    .feature-icon svg {
+      width: 32px;
+      height: 32px;
+      filter: drop-shadow(0 0 4px var(--primary));
+    }
+
+    .logo-icon svg {
+      width: 24px;
+      height: 24px;
+      filter: drop-shadow(0 0 4px var(--primary));
     }
 
     .feature-card h3 {
@@ -616,7 +627,16 @@
 <body>
   <header>
     <div class="logo">
-      <span class="logo-icon">🛰️</span>
+      <span class="logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="9" y="9" width="6" height="6" stroke="#22CC22" stroke-width="2"/>
+          <rect x="2" y="10" width="5" height="4" stroke="#22CC22" stroke-width="2"/>
+          <rect x="17" y="10" width="5" height="4" stroke="#22CC22" stroke-width="2"/>
+          <path d="M4 4 L6 6" stroke="#22CC22" stroke-width="2"/>
+          <path d="M2 7 L4 7" stroke="#22CC22" stroke-width="2"/>
+          <path d="M7 2 L7 4" stroke="#22CC22" stroke-width="2"/>
+        </svg>
+      </span>
       <span>Orbyt</span>
     </div>
     <div class="status-badge">[ Coming Soon ]</div>
@@ -716,32 +736,75 @@
     </div>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">📡</div>
+        <div class="feature-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <circle cx="4" cy="20" r="2" stroke="#22CC22" stroke-width="2"/>
+            <path d="M8 16 Q12 16 12 20" stroke="#22CC22" stroke-width="2" fill="none"/>
+            <path d="M12 12 Q18 12 18 20" stroke="#22CC22" stroke-width="2" fill="none"/>
+            <path d="M16 8 Q24 8 24 20" stroke="#22CC22" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
         <h3>Track Signal Strength</h3>
         <p>Set personalized frequencies for each connection. Daily check-ins for your partner, weekly pings to your parents, monthly signals to distant friends.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔔</div>
+        <div class="feature-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M6 10 L6 14 L4 17 L20 17 L18 14 L18 10 Q18 4 12 4 Q6 4 6 10" stroke="#22CC22" stroke-width="2" stroke-linejoin="miter"/>
+            <path d="M10 17 Q10 21 12 21 Q14 21 14 17" stroke="#22CC22" stroke-width="2"/>
+            <line x1="12" y1="2" x2="12" y2="4" stroke="#22CC22" stroke-width="2"/>
+          </svg>
+        </div>
         <h3>Gentle Reminders</h3>
         <p>Receive thoughtful nudges when someone's drifting out of range. Never let important connections fade into the void.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📝</div>
+        <div class="feature-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M4 2 L16 2 L20 6 L20 22 L4 22 Z" stroke="#22CC22" stroke-width="2" stroke-linejoin="miter"/>
+            <path d="M16 2 L16 6 L20 6" stroke="#22CC22" stroke-width="2" stroke-linejoin="miter"/>
+            <line x1="7" y1="10" x2="17" y2="10" stroke="#22CC22" stroke-width="2"/>
+            <line x1="7" y1="14" x2="17" y2="14" stroke="#22CC22" stroke-width="2"/>
+            <line x1="7" y1="18" x2="13" y2="18" stroke="#22CC22" stroke-width="2"/>
+          </svg>
+        </div>
         <h3>Context Notes</h3>
         <p>Remember the little things. Store notes like "ask about the job interview" so every conversation feels personal and meaningful.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">💕</div>
+        <div class="feature-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M7 5 L4 8 L7 11 L10 8 L7 5" stroke="#22CC22" stroke-width="2" stroke-linejoin="miter"/>
+            <path d="M10 5 L7 8" stroke="#22CC22" stroke-width="2"/>
+            <path d="M14 9 L11 12 L14 19 L17 12 L20 9 L17 12" stroke="#22CC22" stroke-width="2" stroke-linejoin="miter"/>
+          </svg>
+        </div>
         <h3>Date Night Ideas</h3>
         <p>Stuck in a rut? Spin for a random date idea from over 40 curated suggestions, then add it straight to your calendar.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔒</div>
+        <div class="feature-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M7 10 L7 7 Q7 3 12 3 Q17 3 17 7 L17 10" stroke="#22CC22" stroke-width="2" fill="none"/>
+            <rect x="5" y="10" width="14" height="10" stroke="#22CC22" stroke-width="2"/>
+            <circle cx="12" cy="15" r="2" stroke="#22CC22" stroke-width="2"/>
+            <line x1="12" y1="17" x2="12" y2="18" stroke="#22CC22" stroke-width="2"/>
+          </svg>
+        </div>
         <h3>Privacy First</h3>
         <p>Your data stays on your device by default. Optional encrypted cloud backup means only you can access your information.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🧠</div>
+        <div class="feature-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 Q6 3 5 8 Q3 9 3 12 Q3 15 5 16 Q5 20 9 21 L12 21 L15 21 Q19 20 19 16 Q21 15 21 12 Q21 9 19 8 Q18 3 12 3" stroke="#22CC22" stroke-width="2" fill="none"/>
+            <line x1="12" y1="3" x2="12" y2="21" stroke="#22CC22" stroke-width="2"/>
+            <path d="M8 8 L10 10 L8 12" stroke="#22CC22" stroke-width="1.5"/>
+            <path d="M16 8 L14 10 L16 12" stroke="#22CC22" stroke-width="1.5"/>
+            <path d="M8 15 L10 15" stroke="#22CC22" stroke-width="1.5"/>
+            <path d="M14 15 L16 15" stroke="#22CC22" stroke-width="1.5"/>
+          </svg>
+        </div>
         <h3>Built For Your Brain</h3>
         <p>No guilt trips, no social pressure. Just a calm, focused tool to help you maintain the connections your mental health depends on.</p>
       </div>
@@ -800,7 +863,16 @@
 
   <footer>
     <div class="logo">
-      <span class="logo-icon">🛰️</span>
+      <span class="logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="9" y="9" width="6" height="6" stroke="#22CC22" stroke-width="2"/>
+          <rect x="2" y="10" width="5" height="4" stroke="#22CC22" stroke-width="2"/>
+          <rect x="17" y="10" width="5" height="4" stroke="#22CC22" stroke-width="2"/>
+          <path d="M4 4 L6 6" stroke="#22CC22" stroke-width="2"/>
+          <path d="M2 7 L4 7" stroke="#22CC22" stroke-width="2"/>
+          <path d="M7 2 L7 4" stroke="#22CC22" stroke-width="2"/>
+        </svg>
+      </span>
       <span>Orbyt</span>
     </div>
     <p>Maintaining signal with the humans who matter.</p>
