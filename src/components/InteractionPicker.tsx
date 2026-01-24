@@ -1,14 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { InteractionType, INTERACTION_LABELS } from '../types';
-import { ChatIcon, PhoneIcon, HandshakeIcon, CoupleIcon } from './icons';
+import { ChatIcon, PhoneIcon, HandshakeIcon, CalendarIcon } from './icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 
 interface InteractionPickerProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (type: InteractionType) => void;
-  showDateNight?: boolean;
 }
 
 const getInteractionIcon = (type: InteractionType) => {
@@ -21,24 +20,21 @@ const getInteractionIcon = (type: InteractionType) => {
       return <PhoneIcon size={iconSize} color={iconColor} />;
     case 'in-person':
       return <HandshakeIcon size={iconSize} color={iconColor} />;
-    case 'date-night':
-      return <CoupleIcon size={iconSize} color={iconColor} />;
+    case 'hangout':
+      return <CalendarIcon size={iconSize} color={iconColor} />;
     default:
       return <ChatIcon size={iconSize} color={iconColor} />;
   }
 };
 
-const interactionTypes: InteractionType[] = ['text', 'call', 'in-person', 'date-night'];
+const interactionTypes: InteractionType[] = ['text', 'call', 'in-person', 'hangout'];
 
 export default function InteractionPicker({
   visible,
   onClose,
   onSelect,
-  showDateNight = false,
 }: InteractionPickerProps) {
-  const options = showDateNight
-    ? interactionTypes
-    : interactionTypes.filter(t => t !== 'date-night');
+  const options = interactionTypes;
 
   return (
     <Modal

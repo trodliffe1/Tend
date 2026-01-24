@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Calendar from 'expo-calendar';
-import { DateIdea, dateIdeas, categoryLabels, getRandomDateIdea } from '../constants/dateIdeas';
+import { ActivityIdea, activityIdeas, categoryLabels, getRandomActivity } from '../constants/activityIdeas';
 import Button from '../components/Button';
 import {
   DiceIcon,
@@ -23,7 +23,7 @@ import {
 } from '../components/icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 
-type Category = DateIdea['category'] | 'all';
+type Category = ActivityIdea['category'] | 'all';
 
 const getCategoryIcon = (category: Category, size: number = 20, color: string = colors.textSecondary) => {
   switch (category) {
@@ -42,9 +42,9 @@ const getCategoryIcon = (category: Category, size: number = 20, color: string = 
   }
 };
 
-export default function DateNightScreen() {
+export default function HangoutScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
-  const [currentIdea, setCurrentIdea] = useState<DateIdea | null>(null);
+  const [currentIdea, setCurrentIdea] = useState<ActivityIdea | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
 
   const handleSpin = () => {
@@ -54,7 +54,7 @@ export default function DateNightScreen() {
     let count = 0;
     const interval = setInterval(() => {
       const category = selectedCategory === 'all' ? undefined : selectedCategory;
-      setCurrentIdea(getRandomDateIdea(category));
+      setCurrentIdea(getRandomActivity(category));
       count++;
       if (count >= 8) {
         clearInterval(interval);
@@ -100,7 +100,7 @@ export default function DateNightScreen() {
       endDate.setHours(21, 0, 0, 0);
 
       await Calendar.createEventAsync(defaultCalendar.id, {
-        title: `Date Night: ${currentIdea.title}`,
+        title: `Hangout: ${currentIdea.title}`,
         notes: currentIdea.description,
         startDate: eventDate,
         endDate: endDate,
@@ -108,7 +108,7 @@ export default function DateNightScreen() {
       });
 
       Alert.alert(
-        'Booked! 💕',
+        'Booked!',
         `"${currentIdea.title}" has been added to your calendar for next Saturday at 7 PM.`
       );
     } catch (error) {
@@ -123,9 +123,9 @@ export default function DateNightScreen() {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Date Night Generator</Text>
+          <Text style={styles.title}>Activity Generator</Text>
           <Text style={styles.subtitle}>
-            Shake things up with a random date idea
+            Shake things up with a random activity idea
           </Text>
         </View>
 
@@ -176,7 +176,7 @@ export default function DateNightScreen() {
                 <CoupleIcon size={64} color={colors.primary} />
               </View>
               <Text style={styles.emptyText}>
-                Tap the button below to get a date idea!
+                Tap the button below to get an activity idea!
               </Text>
             </View>
           )}

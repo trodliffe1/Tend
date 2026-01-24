@@ -17,7 +17,7 @@
       "bundleIdentifier": "com.orbyt.app",
       "infoPlist": {
         "NSContactsUsageDescription": "Orbyt needs access to your contacts to help you import people you want to stay connected with.",
-        "NSCalendarsUsageDescription": "Orbyt needs access to your calendar to add date night events.",
+        "NSCalendarsUsageDescription": "Orbyt needs access to your calendar to schedule planned activities.",
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized reminders."
       }
     },
@@ -55,7 +55,7 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow Orbyt to access your calendar to schedule date nights."
+          "calendarPermission": "Allow Orbyt to access your calendar to schedule planned activities."
         }
       ],
       "expo-sqlite"

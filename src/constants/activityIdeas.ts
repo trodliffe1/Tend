@@ -1,11 +1,11 @@
-export interface DateIdea {
+export interface ActivityIdea {
   id: string;
   title: string;
   description: string;
   category: 'home' | 'going-out' | 'adventure' | 'quick';
 }
 
-export const dateIdeas: DateIdea[] = [
+export const activityIdeas: ActivityIdea[] = [
   // Home dates
   { id: '1', title: 'Cook Together', description: 'Pick a new recipe and make it together from scratch', category: 'home' },
   { id: '2', title: 'Movie Marathon', description: 'Watch a trilogy or themed movies with snacks', category: 'home' },
@@ -62,9 +62,9 @@ export const categoryLabels = {
   quick: 'Quick',
 };
 
-export function getRandomDateIdea(category?: DateIdea['category']): DateIdea {
+export function getRandomActivity(category?: ActivityIdea['category']): ActivityIdea {
   const filtered = category
-    ? dateIdeas.filter(idea => idea.category === category)
-    : dateIdeas;
+    ? activityIdeas.filter(idea => idea.category === category)
+    : activityIdeas;
   return filtered[Math.floor(Math.random() * filtered.length)];
 }

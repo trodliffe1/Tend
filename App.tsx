@@ -13,7 +13,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import PersonDetailScreen from './src/screens/PersonDetailScreen';
 import AddEditPersonScreen from './src/screens/AddEditPersonScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import DateNightScreen from './src/screens/DateNightScreen';
+import HangoutScreen from './src/screens/HangoutScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
@@ -25,7 +25,7 @@ import {
   addNotificationResponseListener,
 } from './src/utils/notifications';
 import { colors } from './src/constants/theme';
-import { SatelliteIcon, HeartsIcon, GearIcon } from './src/components/icons';
+import { SatelliteIcon, CalendarIcon, GearIcon } from './src/components/icons';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -37,7 +37,7 @@ type RootStackParamList = {
 
 type TabParamList = {
   Home: undefined;
-  DateNight: undefined;
+  Hangout: undefined;
   Settings: undefined;
 };
 
@@ -58,8 +58,8 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   switch (name) {
     case 'Home':
       return <SatelliteIcon size={iconSize} color={iconColor} />;
-    case 'DateNight':
-      return <HeartsIcon size={iconSize} color={iconColor} />;
+    case 'Hangout':
+      return <CalendarIcon size={iconSize} color={iconColor} />;
     case 'Settings':
       return <GearIcon size={iconSize} color={iconColor} />;
     default:
@@ -113,10 +113,10 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="DateNight"
-        component={DateNightScreen}
+        name="Hangout"
+        component={HangoutScreen}
         options={{
-          title: 'Date Night',
+          title: 'Hangout',
         }}
       />
       <Tab.Screen

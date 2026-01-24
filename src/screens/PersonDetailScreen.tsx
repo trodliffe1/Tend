@@ -21,7 +21,7 @@ import {
   ChatIcon,
   PhoneIcon,
   HandshakeIcon,
-  CoupleIcon,
+  CalendarIcon,
   CakeIcon,
   RingIcon,
 } from '../components/icons';
@@ -129,8 +129,8 @@ export default function PersonDetailScreen() {
         return <PhoneIcon size={iconSize} color={iconColor} />;
       case 'in-person':
         return <HandshakeIcon size={iconSize} color={iconColor} />;
-      case 'date-night':
-        return <CoupleIcon size={iconSize} color={iconColor} />;
+      case 'hangout':
+        return <CalendarIcon size={iconSize} color={iconColor} />;
       default:
         return <ChatIcon size={iconSize} color={iconColor} />;
     }
@@ -324,7 +324,6 @@ export default function PersonDetailScreen() {
         visible={pickerVisible}
         onClose={() => setPickerVisible(false)}
         onSelect={handleInteractionSelect}
-        showDateNight={person.relationshipType === 'partner'}
       />
     </SafeAreaView>
   );

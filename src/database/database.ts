@@ -1,7 +1,12 @@
 import * as SQLite from 'expo-sqlite';
-import { Person, Note, Interaction, AppSettings, FamilyMember } from '../types';
+import { Person, Note, Interaction, AppSettings, FamilyMember, InteractionType } from '../types';
 
 const DB_NAME = 'orbyt.db';
+
+// Normalize legacy 'date-night' interaction type to 'hangout'
+function normalizeInteractionType(type: string): InteractionType {
+  return type === 'date-night' ? 'hangout' : type as InteractionType;
+}
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -100,10 +105,14 @@ export async function getAllPersons(): Promise<Person[]> {
       'SELECT id, content, createdAt FROM notes WHERE personId = ? ORDER BY createdAt DESC',
       [person.id]
     );
-    const interactions = await database.getAllAsync<Interaction>(
+    const rawInteractions = await database.getAllAsync<any>(
       'SELECT id, type, date, note FROM interactions WHERE personId = ? ORDER BY date DESC',
       [person.id]
     );
+    const interactions: Interaction[] = rawInteractions.map(i => ({
+      ...i,
+      type: normalizeInteractionType(i.type),
+    }));
     const familyMembers = await database.getAllAsync<any>(
       'SELECT id, memberType, name, birthday, info FROM family_members WHERE personId = ?',
       [person.id]
@@ -139,10 +148,14 @@ export async function getPersonById(id: string): Promise<Person | null> {
     'SELECT id, content, createdAt FROM notes WHERE personId = ? ORDER BY createdAt DESC',
     [person.id]
   );
-  const interactions = await database.getAllAsync<Interaction>(
+  const rawInteractions = await database.getAllAsync<any>(
     'SELECT id, type, date, note FROM interactions WHERE personId = ? ORDER BY date DESC',
     [person.id]
   );
+  const interactions: Interaction[] = rawInteractions.map(i => ({
+    ...i,
+    type: normalizeInteractionType(i.type),
+  }));
   const familyMembers = await database.getAllAsync<any>(
     'SELECT id, memberType, name, birthday, info FROM family_members WHERE personId = ?',
     [person.id]

@@ -2,7 +2,7 @@ export type RelationshipType = 'friend' | 'family' | 'partner' | 'other';
 
 export type ContactFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'quarterly';
 
-export type InteractionType = 'text' | 'call' | 'in-person' | 'date-night';
+export type InteractionType = 'text' | 'call' | 'in-person' | 'hangout';
 
 export type HealthStatus = 'healthy' | 'due-soon' | 'overdue';
 
@@ -88,5 +88,5 @@ export const INTERACTION_LABELS: Record<InteractionType, string> = {
   text: 'Text',
   call: 'Call',
   'in-person': 'In Person',
-  'date-night': 'Date Night',
+  'hangout': 'Hangout',
 };

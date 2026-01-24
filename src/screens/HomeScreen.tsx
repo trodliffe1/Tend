@@ -135,7 +135,6 @@ export default function HomeScreen() {
           setSelectedPerson(null);
         }}
         onSelect={handleInteractionSelect}
-        showDateNight={selectedPerson?.relationshipType === 'partner'}
       />
     </SafeAreaView>
   );

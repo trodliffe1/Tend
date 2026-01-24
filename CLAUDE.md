@@ -34,7 +34,7 @@ Tend/
 │   │   ├── HomeScreen.tsx          # Dashboard ("My Orbit") showing all connections sorted by urgency
 │   │   ├── PersonDetailScreen.tsx  # Individual person view with notes & interaction history
 │   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details)
-│   │   ├── DateNightScreen.tsx     # Random date idea generator
+│   │   ├── HangoutScreen.tsx        # Random activity idea generator
 │   │   ├── SettingsScreen.tsx      # Notification prefs, date reminders, account & sign out
 │   │   ├── BackupRestoreScreen.tsx # Encrypted cloud backup management
 │   │   └── LocalBackupScreen.tsx   # Local JSON export/import
@@ -63,7 +63,7 @@ Tend/
 │   │   └── backup.ts               # Cloud backup/restore orchestration
 │   └── constants/
 │       ├── theme.ts                # Dark CRT terminal theme colors, spacing, typography
-│       └── dateIdeas.ts            # 40+ categorized date night ideas
+│       └── activityIdeas.ts        # 40+ categorized activity ideas
 ├── landing-page/
 │   └── index.html          # Marketing landing page (myorbyt.com)
 ├── app.json                # Expo configuration
@@ -108,7 +108,7 @@ The `HealthBar` component displays a vertical bar next to avatars:
 
 **Interaction:**
 - `id`
-- `type`: text | call | in-person | date-night
+- `type`: text | call | in-person | hangout
 - `date`
 - `note` (optional)
 
@@ -132,7 +132,7 @@ The `HealthBar` component displays a vertical bar next to avatars:
 ### Navigation
 - **Auth flow**: Unauthenticated users see AuthNavigator (Login → Register/ForgotPassword)
 - **Main app**: Authenticated users see AppNavigator with bottom tabs
-- Bottom tabs: Orbit (home), Date Night, Settings
+- Bottom tabs: Orbit (home), Hangout, Settings
 - Stack navigator for: PersonDetail (back button shows "Back To Orbit"), AddEditPerson (modal)
 - Home screen title: "My Orbit"
 
@@ -241,6 +241,6 @@ npx expo start
 - **Add family details**: When adding/editing a person, scroll down to add spouse and kids with birthdays
 - **Log contact**: Tap "Log Contact" on person card or detail screen
 - **Add context note**: Person detail > Notes section > + Add
-- **Get date idea**: Date Night tab > tap "Get an Idea"
+- **Get activity idea**: Hangout tab > tap "Get an Idea"
 - **Remove person**: Person detail > "Remove from Orbit"
 - **Configure date reminders**: Settings > Birthday & Anniversary Reminders section
