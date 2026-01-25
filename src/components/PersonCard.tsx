@@ -46,13 +46,14 @@ export default function PersonCard({ person, onPress, onQuickLog }: PersonCardPr
             <Text style={styles.name}>{person.name}</Text>
             <Text style={styles.relationship}>{RELATIONSHIP_LABELS[person.relationshipType]}</Text>
           </View>
+
+          <View style={styles.statusSection}>
+            <Text style={[styles.statusText, { color: statusColor }]}>{getStatusText()}</Text>
+            {person.lastContactDate && (
+              <Text style={styles.lastContact}>Last: {formatRelativeDate(person.lastContactDate)}</Text>
+            )}
+          </View>
         </View>
-
-        <Text style={[styles.statusText, { color: statusColor }]}>{getStatusText()}</Text>
-
-        {person.lastContactDate && (
-          <Text style={styles.lastContact}>Last contact: {formatRelativeDate(person.lastContactDate)}</Text>
-        )}
 
         {status !== 'healthy' && person.notes.length > 0 && (
           <View style={styles.noteHint}>
@@ -126,6 +127,11 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+    marginRight: spacing.sm,
+  },
+  statusSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   name: {
     fontSize: 16,
@@ -141,15 +147,14 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    marginBottom: spacing.xs,
     fontFamily: 'monospace',
   },
   lastContact: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginTop: 2,
     fontFamily: 'monospace',
   },
   noteHint: {

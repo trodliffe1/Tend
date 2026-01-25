@@ -239,11 +239,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: colors.secondary,
   },
   fabText: {
     fontSize: 28,
-    color: colors.primary,
+    color: colors.secondary,
     fontWeight: '400',
     fontFamily: 'monospace',
   },
