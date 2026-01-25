@@ -1,0 +1,72 @@
+Privacy Policy – MyOrbyt
+Effective date: 25/01/2026
+App name: MyOrbyt
+Company/Developer: ZenTime Labs (“we”, “us”, “our”)
+Contact: info@myorbyt.com
+Website: https://www.myorbyt.com/ 
+1) Overview
+We built MyOrbyt to help you set reminders to keep in touch with the people you care about. We designed the app so that your content and relationship data stays private.
+•	Your reminder and relationship data is stored locally on your device and/or encrypted by you before it is stored in the cloud.
+•	We do not have access to your content, contact notes, or relationship data.
+•	The main personal data we can access is your email address (as described below).
+2) Data We Collect
+A) Email address
+We collect your email address if you provide it, for example to:
+•	create or manage your account,
+•	send essential service messages (e.g., verification, security notices),
+•	respond to support requests,
+•	send product updates or marketing emails only if you opt in.
+We do not collect your reminder text, contact notes, relationship tags, or any similar content.
+B) App data stored on your device (not accessible to us)
+The app stores data such as reminders, schedules, and any relationship context on your device. This data is not transmitted to us unless you explicitly choose to share something with support (e.g., a screenshot or an exported file).
+C) Encrypted cloud sync (if enabled)
+If you enable cloud backup, your app data may be stored in the cloud in encrypted form. Encryption is performed on your device, and we do not have the encryption keys needed to read your content.
+If you’re using iCloud/Apple services: Apple may process certain data as part of providing iCloud sync.
+3) Data We Do Not Collect
+We do not collect:
+•	reminder contents or notes,
+•	your contact list (unless you explicitly grant permission and the data remains on-device),
+•	precise location,
+•	microphone recordings,
+•	photos (unless you explicitly add them, and they remain on-device / encrypted),
+•	advertising identifiers for tracking.
+4) How We Use Your Information
+We use your email address to:
+•	provide and maintain the app (account, authentication, critical notices),
+•	provide support,
+•	send updates and tips if you opt in.
+We do not use your email address to build advertising profiles or sell your information.
+5) Sharing Your Information
+We do not sell your personal information.
+We may share limited information only in these cases:
+•	Service providers that help us run the app (e.g., email delivery for verification or newsletters). They are permitted to use your data only to provide services to us.
+•	Legal requirements if we are required to comply with law, regulation, or valid legal process.
+•	Business transfers if we are involved in a merger, acquisition, or asset sale (you will be notified if required).
+Your encrypted reminder/relationship data is not shared because we cannot access it.
+6) Data Retention
+•	We keep your email address for as long as you maintain an account or subscription, or as needed to provide the service.
+•	If you delete your account (or request deletion), we will delete your email address within a reasonable timeframe, unless we need to keep it to comply with legal obligations (e.g., billing records).
+7) Security
+We use reasonable safeguards to protect the personal data we control (such as email addresses).
+For reminder/relationship data, privacy is primarily protected by on-device storage and/or end-to-end encryption controlled by you.
+No system is 100% secure, but we design the app to minimize the data we can access.
+8) Your Choices and Rights
+Depending on where you live, you may have rights to:
+•	access the personal data we hold about you,
+•	request correction or deletion,
+•	object to or restrict processing,
+•	withdraw consent (e.g., marketing emails).
+You can contact us at info@myorbyt.com to make a request.
+9) Children’s Privacy
+MyOrbyt is not intended for children under 16. We do not knowingly collect personal data from children. If you believe a child provided us an email address, contact us and we will delete it.
+10) International Transfers
+If you are located in the UK/EU and our service providers process email addresses outside your country, we take steps intended to ensure appropriate safeguards are in place (for example, contractual protections).
+11) Third-Party Links and Services
+The app may include links to third-party websites or services. Their privacy practices are governed by their own policies.
+12) Changes to This Policy
+We may update this Privacy Policy from time to time. We’ll update the “Effective date” and, if changes are significant, we’ll provide additional notice within the app or by email.
+13) Contact Us
+If you have questions or requests, contact:
+ZenTime Labs
+Email: info@myorbyt.com
+

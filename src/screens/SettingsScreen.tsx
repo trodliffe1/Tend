@@ -25,6 +25,7 @@ type RootStackParamList = {
   AddEditPerson: { personId?: string };
   BackupRestore: undefined;
   LocalBackup: undefined;
+  PrivacyPolicy: undefined;
 };
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -379,6 +380,19 @@ export default function SettingsScreen() {
             </Text>
             <Text style={styles.versionText}>Version 1.0.0</Text>
           </View>
+
+          <TouchableOpacity
+            style={[styles.settingRow, { marginTop: spacing.sm }]}
+            onPress={() => navigation.navigate('PrivacyPolicy')}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Privacy Policy</Text>
+              <Text style={styles.settingDescription}>
+                How we handle your data
+              </Text>
+            </View>
+            <Text style={styles.arrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Account Section */}

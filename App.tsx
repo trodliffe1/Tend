@@ -19,6 +19,7 @@ import RegisterScreen from './src/screens/auth/RegisterScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
 import BackupRestoreScreen from './src/screens/BackupRestoreScreen';
 import LocalBackupScreen from './src/screens/LocalBackupScreen';
+import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import {
   requestNotificationPermissions,
   scheduleReminderNotifications,
@@ -33,6 +34,7 @@ type RootStackParamList = {
   AddEditPerson: { personId?: string };
   BackupRestore: undefined;
   LocalBackup: undefined;
+  PrivacyPolicy: undefined;
 };
 
 type TabParamList = {
@@ -248,6 +250,14 @@ function AppNavigator() {
           component={LocalBackupScreen}
           options={{
             title: 'Local Backup',
+            headerBackTitle: 'Settings',
+          }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
+          options={{
+            title: 'Privacy Policy',
             headerBackTitle: 'Settings',
           }}
         />
