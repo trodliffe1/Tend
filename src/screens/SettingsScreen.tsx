@@ -16,6 +16,8 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { SatelliteIcon } from '../components/icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
+import { deleteBackup } from '../utils/backup';
+import { deleteAllLocalData } from '../database/database';
 
 type RootStackParamList = {
   MainTabs: undefined;
@@ -30,8 +32,9 @@ const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { settings, updateSettings } = useApp();
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, signOut, loading: authLoading, deleteAccount } = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -44,6 +47,57 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await signOut();
+          },
+        },
+      ]
+    );
+  };
+
+  const performAccountDeletion = async () => {
+    setDeleteLoading(true);
+    try {
+      // 1. Delete cloud backup (ignore errors - may not exist)
+      await deleteBackup();
+
+      // 2. Delete all local data
+      await deleteAllLocalData();
+
+      // 3. Delete Supabase auth account
+      const { error } = await deleteAccount();
+      if (error) {
+        Alert.alert('Error', error);
+      }
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      Alert.alert('Error', 'Failed to delete account. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete:\n\n- Your cloud backup data\n- All local app data\n- Your account\n\nThis action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            // Second confirmation
+            Alert.alert(
+              'Final Confirmation',
+              'Are you absolutely sure? All your data will be permanently deleted.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Everything',
+                  style: 'destructive',
+                  onPress: performAccountDeletion,
+                },
+              ]
+            );
           },
         },
       ]
@@ -347,6 +401,18 @@ export default function SettingsScreen() {
               <Text style={styles.signOutText}>SIGN OUT</Text>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteAccountButton}
+            onPress={handleDeleteAccount}
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? (
+              <ActivityIndicator color={colors.error} />
+            ) : (
+              <Text style={styles.deleteAccountText}>DELETE ACCOUNT</Text>
+            )}
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -492,6 +558,22 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   signOutText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.error,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+  },
+  deleteAccountButton: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.error,
+    marginTop: spacing.sm,
+  },
+  deleteAccountText: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.error,

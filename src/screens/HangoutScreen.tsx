@@ -152,6 +152,7 @@ export default function HangoutScreen() {
                   styles.categoryText,
                   selectedCategory === category && styles.categoryTextSelected,
                 ]}
+                numberOfLines={1}
               >
                 {category === 'all' ? 'All' : categoryLabels[category]}
               </Text>
@@ -238,14 +239,15 @@ const styles = StyleSheet.create({
   },
   categoryButton: {
     alignItems: 'center',
-    padding: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 2,
     borderRadius: borderRadius.md,
     backgroundColor: colors.surface,
     flex: 1,
     marginHorizontal: 2,
   },
   categoryButtonSelected: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: colors.primary + '40',
   },
   categoryIconContainer: {
     marginBottom: 2,

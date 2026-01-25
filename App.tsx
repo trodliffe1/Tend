@@ -108,7 +108,7 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Orbit',
+          title: 'Orbyt',
           headerShown: false,
         }}
       />
@@ -217,14 +217,14 @@ function AppNavigator() {
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}
-          options={{ headerShown: false, title: 'Orbit' }}
+          options={{ headerShown: false, title: 'Orbyt' }}
         />
         <Stack.Screen
           name="PersonDetail"
           component={PersonDetailScreen}
           options={{
             title: 'Details',
-            headerBackTitle: 'Back To Orbit',
+            headerBackTitle: 'Back To Orbyt',
           }}
         />
         <Stack.Screen

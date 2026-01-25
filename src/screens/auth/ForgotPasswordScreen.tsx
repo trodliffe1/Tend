@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: colors.secondary,
     fontFamily: 'monospace',
     letterSpacing: 1,
   },

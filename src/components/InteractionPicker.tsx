@@ -128,11 +128,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.textSecondary,
+    borderColor: colors.secondary,
   },
   cancelText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: colors.secondary,
     fontFamily: 'monospace',
     textTransform: 'uppercase',
   },

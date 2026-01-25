@@ -10,6 +10,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -59,6 +60,7 @@ export default function AddEditPersonScreen() {
   const [spouse, setSpouse] = useState<FamilyMember | undefined>(existingPerson?.spouse);
   const [kids, setKids] = useState<FamilyMember[]>(existingPerson?.kids || []);
   const [saving, setSaving] = useState(false);
+  const [showFrequencyPicker, setShowFrequencyPicker] = useState(false);
 
   // Format date input as MM/DD
   const formatDateInput = (text: string): string => {
@@ -198,6 +200,16 @@ export default function AddEditPersonScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+        {/* Top Cancel Button */}
+        <View style={styles.topHeader}>
+          <TouchableOpacity
+            style={styles.topCancelButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.topCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Photo Section */}
         <View style={styles.photoSection}>
           <TouchableOpacity onPress={pickImage} style={styles.photoContainer}>
@@ -259,28 +271,62 @@ export default function AddEditPersonScreen() {
         {/* Frequency */}
         <View style={styles.section}>
           <Text style={styles.label}>How often do you want to connect?</Text>
-          <View style={styles.frequencyContainer}>
-            {frequencyOptions.map(option => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.frequencyButton,
-                  frequency === option && styles.frequencyButtonSelected,
-                ]}
-                onPress={() => setFrequency(option)}
-              >
-                <Text
-                  style={[
-                    styles.frequencyText,
-                    frequency === option && styles.frequencyTextSelected,
-                  ]}
-                >
-                  {FREQUENCY_LABELS[option]}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setShowFrequencyPicker(true)}
+          >
+            <Text style={styles.dropdownButtonText}>
+              {FREQUENCY_LABELS[frequency]}
+            </Text>
+            <Text style={styles.dropdownArrow}>▼</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Frequency Picker Modal */}
+        <Modal
+          visible={showFrequencyPicker}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowFrequencyPicker(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowFrequencyPicker(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>SELECT FREQUENCY</Text>
+              {frequencyOptions.map(option => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.modalOption,
+                    frequency === option && styles.modalOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setFrequency(option);
+                    setShowFrequencyPicker(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      frequency === option && styles.modalOptionTextSelected,
+                    ]}
+                  >
+                    {FREQUENCY_LABELS[option]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowFrequencyPicker(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         {/* Important Dates */}
         <View style={styles.section}>
@@ -432,6 +478,20 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xl,
   },
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  topCancelButton: {
+    padding: spacing.sm,
+  },
+  topCancelText: {
+    fontSize: 16,
+    color: colors.secondary,
+    fontWeight: '500',
+  },
   photoSection: {
     alignItems: 'center',
     paddingVertical: spacing.lg,
@@ -520,28 +580,79 @@ const styles = StyleSheet.create({
   optionTextSelected: {
     color: colors.surface,
   },
-  frequencyContainer: {
-    gap: spacing.sm,
-  },
-  frequencyButton: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+  dropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
-    borderWidth: 1.5,
+    padding: spacing.md,
+    borderWidth: 1,
     borderColor: colors.border,
   },
-  frequencyButtonSelected: {
-    backgroundColor: colors.primary + '15',
-    borderColor: colors.primary,
-  },
-  frequencyText: {
-    fontSize: 15,
+  dropdownButtonText: {
+    fontSize: 16,
     color: colors.text,
     fontWeight: '500',
   },
-  frequencyTextSelected: {
+  dropdownArrow: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    width: '85%',
+    maxWidth: 340,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  modalTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  modalOption: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.sm,
+  },
+  modalOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '20',
+  },
+  modalOptionText: {
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  modalOptionTextSelected: {
     color: colors.primary,
+  },
+  modalCancelButton: {
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.secondary,
+  },
+  modalCancelText: {
+    fontSize: 14,
+    color: colors.secondary,
+    fontWeight: '500',
   },
   buttonSection: {
     paddingHorizontal: spacing.lg,
@@ -554,7 +665,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: colors.secondary,
     fontWeight: '500',
   },
   dateRow: {

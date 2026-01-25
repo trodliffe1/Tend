@@ -77,7 +77,7 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.greeting}>My Orbit</Text>
+      <Text style={styles.greeting}>MyOrbyt</Text>
       {persons.length > 0 && (
         <View style={styles.statsContainer}>
           <View style={[styles.statBadge, { backgroundColor: colors.overdue + '20' }]}>

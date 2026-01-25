@@ -120,12 +120,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    try {
+      console.log('Calling delete-user-account function...');
+
+      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+        method: 'POST',
+      });
+
+      console.log('Response data:', data);
+      console.log('Response error:', error);
+
+      if (error) {
+        // Try to get more details from the error
+        console.log('Error name:', error.name);
+        console.log('Error context:', (error as any).context);
+
+        // If it's a FunctionsHttpError, try to get the response body
+        if (error.name === 'FunctionsHttpError') {
+          const errorData = await (error as any).context?.json?.();
+          console.log('Error response body:', errorData);
+          return { error: errorData?.error || error.message || 'Failed to delete account' };
+        }
+
+        return { error: error.message || 'Failed to delete account' };
+      }
+
+      if (data?.error) {
+        return { error: data.error };
+      }
+
+      // Sign out locally after successful deletion
+      await supabase.auth.signOut();
+      return { error: null };
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      return { error: `Failed to delete account: ${error.message}` };
+    }
+  }, []);
+
   const value: AuthContextType = {
     ...state,
     signUp,
     signIn,
     signOut,
     resetPassword,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

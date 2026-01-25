@@ -425,3 +425,11 @@ export async function importAllData(data: { persons: Person[]; settings: AppSett
   // Import settings
   await updateSettings(data.settings);
 }
+
+export async function deleteAllLocalData(): Promise<void> {
+  const database = await getDatabase();
+  await database.execAsync('DELETE FROM interactions');
+  await database.execAsync('DELETE FROM notes');
+  await database.execAsync('DELETE FROM family_members');
+  await database.execAsync('DELETE FROM persons');
+}
