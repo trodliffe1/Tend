@@ -43,3 +43,10 @@ yarn-error.*
 
 # IDE
 .idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
