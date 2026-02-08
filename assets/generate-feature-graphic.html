@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Orbyt Feature Graphic Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 40px;
+      text-align: center;
+    }
+    h1 { color: #22CC22; }
+    p.subtitle { color: #888; margin-bottom: 30px; }
+    .preview-container {
+      display: inline-block;
+      background: #0a0a0a;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      margin: 20px 0;
+    }
+    canvas {
+      border: 1px solid #333;
+      display: block;
+    }
+    .size-label {
+      color: #888;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    button {
+      background: #22CC22;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #33FF33;
+    }
+    .requirements {
+      max-width: 500px;
+      margin: 30px auto;
+      text-align: left;
+      background: #0a0a0a;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      font-size: 14px;
+    }
+    .requirements h3 {
+      color: #22CC22;
+      margin-top: 0;
+    }
+    .requirements ul {
+      color: #ccc;
+      line-height: 1.8;
+    }
+    .check { color: #22CC22; }
+  </style>
+</head>
+<body>
+  <h1>Feature Graphic Generator</h1>
+  <p class="subtitle">Google Play Store Feature Graphic (1024 x 500)</p>
+
+  <div class="preview-container">
+    <canvas id="feature" width="1024" height="500"></canvas>
+    <p class="size-label">1024 x 500 pixels</p>
+    <button onclick="download()">Download Feature Graphic</button>
+  </div>
+
+  <div class="requirements">
+    <h3>Google Play Requirements</h3>
+    <ul>
+      <li><span class="check">&#10003;</span> Size: 1024 x 500 px</li>
+      <li><span class="check">&#10003;</span> Format: PNG (no transparency)</li>
+      <li><span class="check">&#10003;</span> No text in outer 15% (safe zone)</li>
+    </ul>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('feature');
+    const ctx = canvas.getContext('2d');
+
+    // Colors from landing page
+    const colors = {
+      primary: '#22CC22',
+      primaryBright: '#33FF33',
+      primaryDim: '#1A9A1A',
+      primaryDark: '#117711',
+      secondary: '#FFAA00',
+      background: '#000000',
+      surface: '#0A0A0A',
+      surfaceElevated: '#111111',
+      border: '#1A9A1A',
+      healthy: '#33FF33',
+      dueSoon: '#FFAA00',
+      overdue: '#FF3333',
+    };
+
+    function drawFeatureGraphic() {
+      const w = 1024;
+      const h = 500;
+
+      // Background
+      ctx.fillStyle = colors.background;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle grid pattern
+      ctx.strokeStyle = '#0D0D0D';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // Scanlines effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      for (let y = 0; y < h; y += 3) {
+        ctx.fillRect(0, y, w, 1);
+      }
+
+      // Vignette effect
+      const gradient = ctx.createRadialGradient(w/2, h/2, 100, w/2, h/2, 600);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw satellite icon (left side)
+      drawSatelliteIcon(180, 250, 0.28);
+
+      // Terminal window (right side)
+      drawTerminalWindow(480, 100, 480, 300);
+
+      // Main title with glow (JetBrains Mono like landing page logo)
+      ctx.save();
+      ctx.font = '700 48px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = '3px';
+
+      // Glow effect
+      ctx.shadowColor = colors.primary;
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = colors.primaryBright;
+      ctx.fillText('ORBYT', 180, 120);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // Tagline
+      ctx.font = '500 18px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = colors.primaryDim;
+      ctx.fillText('Keep Your People in Orbit', 180, 400);
+
+      // Status indicators at bottom
+      drawStatusIndicators(180, 450);
+
+      // Border frame
+      ctx.strokeStyle = colors.border;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, w - 4, h - 4);
+    }
+
+    function drawSatelliteIcon(cx, cy, scale) {
+      const s = 512 * scale;
+      const x = cx - s/2;
+      const y = cy - s/2;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      ctx.strokeStyle = colors.primary;
+      ctx.lineWidth = 20;
+      ctx.lineCap = 'square';
+      ctx.lineJoin = 'miter';
+
+      // Add glow
+      ctx.shadowColor = colors.primary;
+      ctx.shadowBlur = 15;
+
+      // Center body
+      ctx.strokeRect(214, 214, 84, 84);
+
+      // Left solar panel
+      ctx.strokeRect(116, 228, 70, 56);
+
+      // Right solar panel
+      ctx.strokeRect(326, 228, 70, 56);
+
+      // Antenna - diagonal line
+      ctx.beginPath();
+      ctx.moveTo(144, 144);
+      ctx.lineTo(172, 172);
+      ctx.stroke();
+
+      // Antenna - horizontal line
+      ctx.beginPath();
+      ctx.moveTo(116, 186);
+      ctx.lineTo(144, 186);
+      ctx.stroke();
+
+      // Antenna - vertical line
+      ctx.beginPath();
+      ctx.moveTo(186, 116);
+      ctx.lineTo(186, 144);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawTerminalWindow(x, y, w, h) {
+      ctx.save();
+
+      // Window background
+      ctx.fillStyle = colors.surface;
+      ctx.fillRect(x, y, w, h);
+
+      // Window border
+      ctx.strokeStyle = colors.border;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+
+      // Header bar
+      ctx.fillStyle = colors.surfaceElevated;
+      ctx.fillRect(x, y, w, 30);
+      ctx.strokeStyle = colors.border;
+      ctx.strokeRect(x, y, w, 30);
+
+      // Header title
+      ctx.font = '500 12px JetBrains Mono, monospace';
+      ctx.fillStyle = colors.primaryDim;
+      ctx.textAlign = 'left';
+      ctx.fillText('orbyt_terminal v1.0', x + 15, y + 20);
+
+      // Terminal content
+      const lineHeight = 28;
+      const startY = y + 55;
+      const textX = x + 20;
+
+      ctx.font = '500 14px JetBrains Mono, monospace';
+
+      // Line 1
+      ctx.fillStyle = colors.primaryBright;
+      ctx.fillText('$', textX, startY);
+      ctx.fillStyle = colors.primary;
+      ctx.fillText(' orbyt --status', textX + 15, startY);
+
+      // Line 2
+      ctx.fillStyle = colors.primaryDim;
+      ctx.fillText('> Scanning social connections...', textX + 10, startY + lineHeight);
+
+      // Line 3
+      ctx.fillStyle = colors.primaryDim;
+      ctx.fillText('> 3 contacts require attention', textX + 10, startY + lineHeight * 2);
+
+      // Line 4
+      ctx.fillStyle = colors.primaryDim;
+      ctx.fillText('> Signal strength: DEGRADING', textX + 10, startY + lineHeight * 3);
+
+      // Line 5 - empty
+
+      // Line 6
+      ctx.fillStyle = colors.primaryBright;
+      ctx.fillText('$', textX, startY + lineHeight * 5);
+      ctx.fillStyle = colors.primary;
+      ctx.fillText(' orbyt --help', textX + 15, startY + lineHeight * 5);
+
+      // Cursor
+      ctx.fillStyle = colors.primary;
+      ctx.fillRect(textX + 145, startY + lineHeight * 5 - 12, 10, 16);
+
+      // Feature list (same spacing as status output above)
+      ctx.font = '500 13px JetBrains Mono, monospace';
+      ctx.fillStyle = colors.secondary;
+      ctx.fillText('> Track contact frequency', textX + 10, startY + lineHeight * 6);
+      ctx.fillText('> Context notes', textX + 10, startY + lineHeight * 7);
+      ctx.fillText('> Activity ideas', textX + 10, startY + lineHeight * 8);
+
+      ctx.restore();
+    }
+
+    function drawStatusIndicators(cx, y) {
+      const indicators = [
+        { color: colors.healthy, fill: 1.0, label: 'STRONG' },
+        { color: colors.dueSoon, fill: 0.5, label: 'FADING' },
+        { color: colors.overdue, fill: 0.15, label: 'LOST' },
+      ];
+
+      const spacing = 90;
+      const startX = cx - spacing;
+
+      indicators.forEach((ind, i) => {
+        const x = startX + (i * spacing);
+
+        // Health bar
+        ctx.fillStyle = colors.surfaceElevated;
+        ctx.fillRect(x - 4, y - 20, 8, 24);
+        ctx.strokeStyle = colors.border;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - 4, y - 20, 8, 24);
+
+        // Fill
+        const fillHeight = 24 * ind.fill;
+        ctx.fillStyle = ind.color;
+        ctx.shadowColor = ind.color;
+        ctx.shadowBlur = 6;
+        ctx.fillRect(x - 4, y - 20 + (24 - fillHeight), 8, fillHeight);
+        ctx.shadowBlur = 0;
+
+        // Label
+        ctx.font = '600 10px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ind.color;
+        ctx.fillText(ind.label, x, y + 12);
+      });
+    }
+
+    function download() {
+      const link = document.createElement('a');
+      link.download = 'feature-graphic.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Wait for fonts to load
+    document.fonts.ready.then(() => {
+      drawFeatureGraphic();
+    });
+
+    // Fallback if fonts API not available
+    setTimeout(drawFeatureGraphic, 500);
+  </script>
+</body>
+</html>

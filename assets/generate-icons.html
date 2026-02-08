@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Orbyt Icon Generator</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 40px;
+      text-align: center;
+    }
+    h1 { color: #22CC22; }
+    .preview {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 40px 0;
+    }
+    .icon-box {
+      background: #0a0a0a;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    .icon-box h3 {
+      margin: 0 0 10px;
+      color: #22CC22;
+      font-size: 14px;
+    }
+    .icon-box p {
+      margin: 10px 0;
+      color: #888;
+      font-size: 12px;
+    }
+    canvas {
+      border: 1px solid #333;
+      display: block;
+      margin: 10px auto;
+    }
+    button {
+      background: #22CC22;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #33FF33;
+    }
+    .instructions {
+      max-width: 600px;
+      margin: 40px auto;
+      text-align: left;
+      background: #0a0a0a;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    .instructions h2 {
+      color: #22CC22;
+      margin-top: 0;
+    }
+    .instructions ol {
+      color: #ccc;
+      line-height: 1.8;
+    }
+    .instructions code {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #22CC22;
+    }
+  </style>
+</head>
+<body>
+  <h1>Orbyt Icon Generator</h1>
+  <p>Click each button to download the icon files</p>
+
+  <div class="preview">
+    <div class="icon-box">
+      <h3>Play Store Icon</h3>
+      <canvas id="playstore" width="512" height="512"></canvas>
+      <p>512x512 PNG</p>
+      <button onclick="download('playstore', 'playstore-icon.png')">Download</button>
+    </div>
+
+    <div class="icon-box">
+      <h3>App Icon</h3>
+      <canvas id="appicon" width="1024" height="1024"></canvas>
+      <p>1024x1024 PNG (iOS/general)</p>
+      <button onclick="download('appicon', 'icon.png')">Download</button>
+    </div>
+
+    <div class="icon-box">
+      <h3>Adaptive Icon Foreground</h3>
+      <canvas id="adaptive" width="432" height="432"></canvas>
+      <p>432x432 PNG (Android)</p>
+      <button onclick="download('adaptive', 'adaptive-icon.png')">Download</button>
+    </div>
+
+    <div class="icon-box">
+      <h3>Favicon</h3>
+      <canvas id="favicon" width="64" height="64"></canvas>
+      <p>64x64 PNG</p>
+      <button onclick="download('favicon', 'favicon.png')">Download</button>
+    </div>
+
+    <div class="icon-box">
+      <h3>Notification Icon</h3>
+      <canvas id="notification" width="96" height="96"></canvas>
+      <p>96x96 PNG (white on transparent)</p>
+      <button onclick="download('notification', 'notification-icon.png')">Download</button>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h2>After Downloading</h2>
+    <ol>
+      <li>Download each icon by clicking the buttons above</li>
+      <li>Replace the existing files in your <code>assets/</code> folder:
+        <ul>
+          <li><code>icon.png</code> - Main app icon (1024x1024)</li>
+          <li><code>adaptive-icon.png</code> - Android adaptive icon foreground</li>
+          <li><code>favicon.png</code> - Web favicon</li>
+          <li><code>notification-icon.png</code> - Notification icon</li>
+        </ul>
+      </li>
+      <li>Upload <code>playstore-icon.png</code> to Google Play Console</li>
+      <li>Update <code>app.json</code> background color to <code>#000000</code> for the black background</li>
+    </ol>
+  </div>
+
+  <script>
+    function drawIcon(ctx, size, options = {}) {
+      const { transparent = false, whiteOnly = false } = options;
+      const scale = size / 512;
+
+      // Background
+      if (!transparent) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, size, size);
+      }
+
+      const strokeColor = whiteOnly ? '#FFFFFF' : '#22CC22';
+      const strokeWidth = 20 * scale;
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineCap = 'square';
+      ctx.lineJoin = 'miter';
+
+      // Center body
+      ctx.strokeRect(214 * scale, 214 * scale, 84 * scale, 84 * scale);
+
+      // Left solar panel
+      ctx.strokeRect(116 * scale, 228 * scale, 70 * scale, 56 * scale);
+
+      // Right solar panel
+      ctx.strokeRect(326 * scale, 228 * scale, 70 * scale, 56 * scale);
+
+      // Antenna - diagonal line
+      ctx.beginPath();
+      ctx.moveTo(144 * scale, 144 * scale);
+      ctx.lineTo(172 * scale, 172 * scale);
+      ctx.stroke();
+
+      // Antenna - horizontal line
+      ctx.beginPath();
+      ctx.moveTo(116 * scale, 186 * scale);
+      ctx.lineTo(144 * scale, 186 * scale);
+      ctx.stroke();
+
+      // Antenna - vertical line
+      ctx.beginPath();
+      ctx.moveTo(186 * scale, 116 * scale);
+      ctx.lineTo(186 * scale, 144 * scale);
+      ctx.stroke();
+    }
+
+    function drawAdaptiveIcon(ctx, size) {
+      // Adaptive icons need content in the safe zone (center 66%)
+      // 432px canvas, safe zone is ~285px centered
+      const scale = size / 512 * 0.7; // Scale down to fit safe zone
+      const offset = size * 0.15; // Center offset
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.strokeStyle = '#22CC22';
+      ctx.lineWidth = 20 * scale;
+      ctx.lineCap = 'square';
+      ctx.lineJoin = 'miter';
+
+      ctx.save();
+      ctx.translate(offset, offset);
+
+      // Center body
+      ctx.strokeRect(214 * scale, 214 * scale, 84 * scale, 84 * scale);
+
+      // Left solar panel
+      ctx.strokeRect(116 * scale, 228 * scale, 70 * scale, 56 * scale);
+
+      // Right solar panel
+      ctx.strokeRect(326 * scale, 228 * scale, 70 * scale, 56 * scale);
+
+      // Antenna - diagonal line
+      ctx.beginPath();
+      ctx.moveTo(144 * scale, 144 * scale);
+      ctx.lineTo(172 * scale, 172 * scale);
+      ctx.stroke();
+
+      // Antenna - horizontal line
+      ctx.beginPath();
+      ctx.moveTo(116 * scale, 186 * scale);
+      ctx.lineTo(144 * scale, 186 * scale);
+      ctx.stroke();
+
+      // Antenna - vertical line
+      ctx.beginPath();
+      ctx.moveTo(186 * scale, 116 * scale);
+      ctx.lineTo(186 * scale, 144 * scale);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function download(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Draw all icons on page load
+    window.onload = function() {
+      // Play Store icon (512x512)
+      const playstore = document.getElementById('playstore');
+      drawIcon(playstore.getContext('2d'), 512);
+
+      // App icon (1024x1024)
+      const appicon = document.getElementById('appicon');
+      drawIcon(appicon.getContext('2d'), 1024);
+
+      // Adaptive icon (432x432 with safe zone)
+      const adaptive = document.getElementById('adaptive');
+      drawAdaptiveIcon(adaptive.getContext('2d'), 432);
+
+      // Favicon (64x64)
+      const favicon = document.getElementById('favicon');
+      drawIcon(favicon.getContext('2d'), 64);
+
+      // Notification icon (96x96, white on transparent)
+      const notification = document.getElementById('notification');
+      drawIcon(notification.getContext('2d'), 96, { transparent: true, whiteOnly: true });
+    };
+  </script>
+</body>
+</html>

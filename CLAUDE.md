@@ -31,22 +31,24 @@ Tend/
 │   │   │   ├── LoginScreen.tsx     # Login with email/password
 │   │   │   ├── RegisterScreen.tsx  # Registration with password requirements
 │   │   │   └── ForgotPasswordScreen.tsx  # Password reset
-│   │   ├── HomeScreen.tsx          # Dashboard ("My Orbit") showing all connections sorted by urgency
+│   │   ├── HomeScreen.tsx          # Dashboard ("MyOrbyt") showing all connections sorted by urgency
 │   │   ├── PersonDetailScreen.tsx  # Individual person view with notes & interaction history
 │   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details)
 │   │   ├── HangoutScreen.tsx        # Random activity idea generator
 │   │   ├── SettingsScreen.tsx      # Notification prefs, date reminders, account & sign out
 │   │   ├── BackupRestoreScreen.tsx # Encrypted cloud backup management
-│   │   └── LocalBackupScreen.tsx   # Local JSON export/import
+│   │   ├── LocalBackupScreen.tsx   # Local JSON export/import
+│   │   └── PrivacyPolicyScreen.tsx # In-app privacy policy viewer
 │   ├── components/         # Reusable UI components
 │   │   ├── PersonCard.tsx          # Card displaying person with HealthBar
 │   │   ├── HealthBar.tsx           # Vertical health bar indicator next to avatars
 │   │   ├── StatusRing.tsx          # Circular progress indicator (legacy, replaced by HealthBar)
 │   │   ├── Button.tsx              # Styled button component
-│   │   └── InteractionPicker.tsx   # Modal for logging interaction types
+│   │   ├── InteractionPicker.tsx   # Modal for logging interaction types
+│   │   └── icons/index.tsx          # Custom SVG icon components
 │   ├── context/
 │   │   ├── AppContext.tsx          # Global state provider (persons, settings, CRUD ops)
-│   │   └── AuthContext.tsx         # Auth state provider (user, session, signIn/signUp/signOut)
+│   │   └── AuthContext.tsx         # Auth state provider (user, session, signIn/signUp/signOut/resetPassword/deleteAccount)
 │   ├── lib/
 │   │   └── supabase.ts             # Supabase client configuration
 │   ├── database/
@@ -64,8 +66,13 @@ Tend/
 │   └── constants/
 │       ├── theme.ts                # Dark CRT terminal theme colors, spacing, typography
 │       └── activityIdeas.ts        # 40+ categorized activity ideas
+├── supabase/
+│   └── functions/
+│       └── delete-user-account/  # Edge function for account deletion
 ├── landing-page/
-│   └── index.html          # Marketing landing page (myorbyt.com)
+│   ├── index.html          # Marketing landing page (myorbyt.com)
+│   ├── delete-account.html # Account deletion page
+│   └── privacy-policy.html # Privacy policy page
 ├── app.json                # Expo configuration
 ├── package.json            # Dependencies
 └── tsconfig.json           # TypeScript config
@@ -132,17 +139,20 @@ The `HealthBar` component displays a vertical bar next to avatars:
 ### Navigation
 - **Auth flow**: Unauthenticated users see AuthNavigator (Login → Register/ForgotPassword)
 - **Main app**: Authenticated users see AppNavigator with bottom tabs
-- Bottom tabs: Orbit (home), Hangout, Settings
-- Stack navigator for: PersonDetail (back button shows "Back To Orbit"), AddEditPerson (modal)
-- Home screen title: "My Orbit"
+- Bottom tabs: Orbyt (home), Hangout, Settings
+- Stack navigator for: PersonDetail (back button shows "Back To Orbyt"), AddEditPerson (modal), PrivacyPolicy
+- Home screen title: "MyOrbyt"
+- Note: Some in-app button labels still use "Orbit" (e.g., "Remove from Orbit", "Launch into Orbit")
 
 ### Authentication
 - **Provider**: Supabase Auth with email/password
 - **Session persistence**: AsyncStorage (survives app restarts)
 - **Auth state**: Managed via AuthContext (user, session, loading, initialized)
+- **Methods**: signIn, signUp, signOut, resetPassword, deleteAccount
 - **Protected routes**: App content only accessible when authenticated
 - **Password requirements**: 8+ chars, uppercase, lowercase, number
 - **Sign out**: Available in Settings > Account section
+- **Account deletion**: Settings > Account > Delete Account (double confirmation, calls Supabase Edge Function `delete-user-account`)
 
 ### Encrypted Cloud Backup
 - **Location**: Settings > Your Data > Cloud Backup
@@ -202,6 +212,10 @@ Expo Go always uses React Native's new architecture. The app.json setting `newAr
 ### Date Input Format
 All date fields (birthday, anniversary) use MM/DD format with auto-formatting as user types.
 
+### Expo Plugins & Permissions
+- `expo-contacts` with `READ_CONTACTS` permission — used for contact import on AddEditPerson screen
+- `expo-calendar` with `READ_CALENDAR`/`WRITE_CALENDAR` permissions — used for "Book It" feature on Hangout screen
+
 ### Supabase Auth
 - User data stored in `auth.users` (protected schema, view in Dashboard > Authentication > Users)
 - Session tokens auto-refresh via Supabase client config
@@ -243,4 +257,8 @@ npx expo start
 - **Add context note**: Person detail > Notes section > + Add
 - **Get activity idea**: Hangout tab > tap "Get an Idea"
 - **Remove person**: Person detail > "Remove from Orbit"
+- **Delete account**: Settings > Account > Delete Account (double confirmation, calls Supabase Edge Function)
+- **Import from contacts**: When adding a person, tap "Import from Contacts" (uses expo-contacts)
+- **Book activity to calendar**: Hangout tab > get idea > "Book It" (books to next Saturday 7 PM via expo-calendar)
+- **View privacy policy**: Settings > About > Privacy Policy
 - **Configure date reminders**: Settings > Birthday & Anniversary Reminders section

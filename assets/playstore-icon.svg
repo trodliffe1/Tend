@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#000000"/>
+
+  <!-- Satellite icon scaled and centered -->
+  <!-- Original 24x24 scaled ~14x and centered at 256,256 -->
+  <!-- Offset: (512 - 24*14) / 2 = 88 -->
+
+  <!-- Center body -->
+  <rect x="214" y="214" width="84" height="84" stroke="#22CC22" stroke-width="20" fill="none"/>
+
+  <!-- Left solar panel -->
+  <rect x="116" y="228" width="70" height="56" stroke="#22CC22" stroke-width="20" fill="none"/>
+
+  <!-- Right solar panel -->
+  <rect x="326" y="228" width="70" height="56" stroke="#22CC22" stroke-width="20" fill="none"/>
+
+  <!-- Antenna - diagonal line -->
+  <path d="M144 144 L172 172" stroke="#22CC22" stroke-width="20" stroke-linecap="square"/>
+
+  <!-- Antenna - horizontal line -->
+  <path d="M116 186 L144 186" stroke="#22CC22" stroke-width="20" stroke-linecap="square"/>
+
+  <!-- Antenna - vertical line -->
+  <path d="M186 116 L186 144" stroke="#22CC22" stroke-width="20" stroke-linecap="square"/>
+</svg>
