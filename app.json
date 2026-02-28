@@ -13,12 +13,12 @@
       "backgroundColor": "#0F0B1A"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.orbyt.app",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.myorbyt.app",
       "infoPlist": {
         "NSContactsUsageDescription": "Orbyt needs access to your contacts to help you import people you want to stay connected with.",
         "NSCalendarsUsageDescription": "Orbyt needs access to your calendar to schedule planned activities.",
-        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized reminders."
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,12 +27,16 @@
         "backgroundColor": "#0F0B1A"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.orbyt.app",
+      "package": "com.myorbyt.app",
       "permissions": [
         "NOTIFICATIONS",
         "READ_CONTACTS",
         "WRITE_CALENDAR",
-        "READ_CALENDAR"
+        "READ_CALENDAR",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "web": {
@@ -59,6 +63,11 @@
         }
       ],
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d7f805d3-38d3-4f4e-9950-e7bac79f0b9d"
+      }
+    }
   }
 }

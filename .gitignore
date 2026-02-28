@@ -44,6 +44,9 @@ yarn-error.*
 # IDE
 .idea/
 
+# Google Play Store service account key
+play-store-key.json
+
 # Python
 __pycache__/
 *.py[cod]
