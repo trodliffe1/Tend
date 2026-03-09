@@ -48,6 +48,9 @@ yarn-error.*
 # Google Play Store service account key
 play-store-key.json
 
+# EAS credentials
+credentials.json
+
 # Python
 __pycache__/
 *.py[cod]
