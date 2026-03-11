@@ -18,6 +18,7 @@ Orbyt is a mobile app that helps users maintain meaningful connections with frie
 - **Authentication**: Supabase Auth with AsyncStorage session persistence
 - **State Management**: React Context (AppContext for data, AuthContext for auth)
 - **Notifications**: expo-notifications
+- **Time Picker**: @react-native-community/datetimepicker (native time picker in Settings)
 - **Theme**: Dark CRT terminal theme with green (#22CC22) primary color
 
 ## Project Structure
@@ -35,7 +36,7 @@ Tend/
 │   │   ├── PersonDetailScreen.tsx  # Individual person view with notes & interaction history
 │   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details)
 │   │   ├── HangoutScreen.tsx        # Random activity idea generator
-│   │   ├── SettingsScreen.tsx      # Notification prefs, date reminders, account & sign out
+│   │   ├── SettingsScreen.tsx      # Notification prefs (native time picker), date reminders, account & sign out
 │   │   ├── BackupRestoreScreen.tsx # Encrypted cloud backup management
 │   │   ├── LocalBackupScreen.tsx   # Local JSON export/import
 │   │   └── PrivacyPolicyScreen.tsx # In-app privacy policy viewer
@@ -209,12 +210,24 @@ Expo Go always uses React Native's new architecture. The app.json setting `newAr
 ### Entry Point
 `import 'react-native-gesture-handler'` must be the first import in App.tsx.
 
+### Version String
+When bumping the version in `app.json`, also update:
+- `src/screens/SettingsScreen.tsx` — hardcoded "Version x.x.x" in the About card
+
 ### Date Input Format
 All date fields (birthday, anniversary) use MM/DD format with auto-formatting as user types.
 
 ### Expo Plugins & Permissions
 - `expo-contacts` with `READ_CONTACTS` permission — used for contact import on AddEditPerson screen
 - `expo-calendar` with `READ_CALENDAR`/`WRITE_CALENDAR` permissions — used for "Book It" feature on Hangout screen
+- `@react-native-community/datetimepicker` — native time picker for notification time settings
+
+### Notifications (iOS & Android)
+- **iOS permissions**: Must request with explicit `ios: { allowAlert, allowBadge, allowSound }` options
+- **Sound**: Use `sound: 'default'` (string), not `sound: true` (boolean) — iOS requires the string form
+- **Scheduling**: Notifications are scheduled as one-shot DATE triggers for the next 7 days (skipping quiet days). The app reschedules whenever `persons` or `settings` change. If the user doesn't open the app for 7+ days, notifications will stop until next open.
+- **Android**: Uses a `reminders` notification channel with HIGH importance
+- **Time picker**: Settings screen uses `@react-native-community/datetimepicker` for minute-level precision (replaces old Alert-based hourly picker)
 
 ### Supabase Auth
 - User data stored in `auth.users` (protected schema, view in Dashboard > Authentication > Users)

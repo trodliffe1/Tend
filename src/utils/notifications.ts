@@ -47,7 +47,13 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   let finalStatus = existingStatus;
 
   if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
     finalStatus = status;
   }
 
@@ -161,17 +167,6 @@ export async function scheduleReminderNotifications(
   // Parse preferred time
   const [hours, minutes] = settings.notifications.preferredTime.split(':').map(Number);
 
-  // Schedule a notification for tomorrow at the preferred time
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(hours, minutes, 0, 0);
-
-  // Check if tomorrow is a quiet day
-  const tomorrowDay = tomorrow.getDay();
-  if (settings.notifications.quietDays.includes(tomorrowDay)) {
-    return;
-  }
-
   // Sort by urgency and pick the most overdue person
   const sortedByUrgency = needsAttention.sort(
     (a, b) => getDaysUntilDue(a) - getDaysUntilDue(b)
@@ -187,19 +182,37 @@ export async function scheduleReminderNotifications(
     body += ` — ask about: ${randomNote.content}`;
   }
 
-  // Schedule the notification
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Signal Check',
-      body,
-      data: { personId: mostUrgent.id },
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: tomorrow,
-    },
-  });
+  // Schedule daily recurring notifications for the next 7 days
+  // (one-shot DATE triggers stop if the user doesn't reopen the app)
+  const quietDays = settings.notifications.quietDays;
+  for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + dayOffset);
+    targetDate.setHours(hours, minutes, 0, 0);
+
+    // Skip quiet days
+    if (quietDays.includes(targetDate.getDay())) {
+      continue;
+    }
+
+    // Skip if the time has already passed (for today edge cases)
+    if (targetDate <= new Date()) {
+      continue;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Signal Check',
+        body,
+        data: { personId: mostUrgent.id },
+        sound: 'default',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: targetDate,
+      },
+    });
+  }
 
   // Schedule a weekly summary if there are multiple people needing attention
   if (needsAttention.length > 1) {
@@ -211,7 +224,7 @@ export async function scheduleReminderNotifications(
       content: {
         title: 'Weekly Check-in',
         body: `You have ${needsAttention.length} connections drifting out of range. Open Orbyt to check your orbit.`,
-        sound: true,
+        sound: 'default',
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -248,7 +261,7 @@ async function scheduleDateReminders(
           content: {
             title: `${emoji} ${upcoming.type === 'anniversary' ? 'Anniversary' : 'Birthday'} Today!`,
             body: upcoming.label,
-            sound: true,
+            sound: 'default',
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -270,7 +283,7 @@ async function scheduleDateReminders(
           content: {
             title: '📅 Upcoming Date',
             body: `${upcoming.label} is in ${days} ${days === 1 ? 'day' : 'days'}`,
-            sound: true,
+            sound: 'default',
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,

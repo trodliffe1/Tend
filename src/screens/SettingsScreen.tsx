@@ -8,10 +8,13 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { SatelliteIcon } from '../components/icons';
@@ -36,6 +39,7 @@ export default function SettingsScreen() {
   const { user, signOut, loading: authLoading, deleteAccount } = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [timePickerField, setTimePickerField] = useState<'preferredTime' | 'quietHoursStart' | 'quietHoursEnd' | null>(null);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -169,44 +173,45 @@ export default function SettingsScreen() {
   };
 
   const handleTimeSelect = (field: 'preferredTime' | 'quietHoursStart' | 'quietHoursEnd') => {
-    const times = [
-      '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
-      '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
-      '20:00', '21:00', '22:00', '23:00',
-    ];
+    setTimePickerField(field);
+  };
 
-    const labels: Record<string, string> = {
-      preferredTime: 'Notification Time',
-      quietHoursStart: 'Quiet Hours Start',
-      quietHoursEnd: 'Quiet Hours End',
+  const getTimePickerDate = (timeStr: string): Date => {
+    const [h, m] = timeStr.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  const handleTimePickerChange = async (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setTimePickerField(null);
+    }
+    if (event.type === 'dismissed' || !selectedDate || !timePickerField) {
+      return;
+    }
+    const hours = selectedDate.getHours().toString().padStart(2, '0');
+    const mins = selectedDate.getMinutes().toString().padStart(2, '0');
+    const time = `${hours}:${mins}`;
+    const newSettings = {
+      ...localSettings,
+      notifications: { ...localSettings.notifications, [timePickerField]: time },
     };
+    setLocalSettings(newSettings);
+    await updateSettings(newSettings);
+  };
 
-    Alert.alert(
-      labels[field],
-      'Select a time',
-      [
-        ...times.slice(0, 8).map(time => ({
-          text: formatTime(time),
-          onPress: async () => {
-            const newSettings = {
-              ...localSettings,
-              notifications: { ...localSettings.notifications, [field]: time },
-            };
-            setLocalSettings(newSettings);
-            await updateSettings(newSettings);
-          },
-        })),
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+  const handleTimePickerDone = () => {
+    setTimePickerField(null);
   };
 
   const formatTime = (time: string): string => {
-    const [hours] = time.split(':');
+    const [hours, mins] = time.split(':');
     const hour = parseInt(hours, 10);
+    const minute = parseInt(mins, 10) || 0;
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
-    return `${displayHour}:00 ${period}`;
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
   };
 
   return (
@@ -378,7 +383,7 @@ export default function SettingsScreen() {
             <Text style={styles.aboutText}>
               A relationship tracker to help you maintain signal with the humans who matter.
             </Text>
-            <Text style={styles.versionText}>Version 1.0.0</Text>
+            <Text style={styles.versionText}>Version 1.1.0</Text>
           </View>
 
           <TouchableOpacity
@@ -429,6 +434,48 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Android: native dialog, renders inline */}
+      {timePickerField && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={getTimePickerDate(localSettings.notifications[timePickerField])}
+          mode="time"
+          is24Hour={false}
+          minuteInterval={1}
+          onChange={handleTimePickerChange}
+        />
+      )}
+
+      {/* iOS: show in a bottom modal */}
+      {Platform.OS === 'ios' && (
+        <Modal
+          visible={timePickerField !== null}
+          transparent
+          animationType="slide"
+          onRequestClose={handleTimePickerDone}
+        >
+          <View style={styles.timePickerOverlay}>
+            <View style={styles.timePickerContainer}>
+              <View style={styles.timePickerHeader}>
+                <TouchableOpacity onPress={handleTimePickerDone}>
+                  <Text style={styles.timePickerDone}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              {timePickerField && (
+                <DateTimePicker
+                  value={getTimePickerDate(localSettings.notifications[timePickerField])}
+                  mode="time"
+                  display="spinner"
+                  minuteInterval={1}
+                  onChange={handleTimePickerChange}
+                  textColor={colors.primary}
+                  themeVariant="dark"
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -593,5 +640,28 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontFamily: 'monospace',
     letterSpacing: 2,
+  },
+  timePickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  timePickerContainer: {
+    backgroundColor: colors.surfaceElevated,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    paddingBottom: spacing.xl,
+  },
+  timePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  timePickerDone: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
   },
 });
