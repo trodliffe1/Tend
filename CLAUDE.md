@@ -34,7 +34,7 @@ Tend/
 │   │   │   └── ForgotPasswordScreen.tsx  # Password reset
 │   │   ├── HomeScreen.tsx          # Dashboard ("MyOrbyt") showing all connections sorted by urgency
 │   │   ├── PersonDetailScreen.tsx  # Individual person view with notes & interaction history
-│   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details)
+│   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details & bulk contact import)
 │   │   ├── HangoutScreen.tsx        # Random activity idea generator
 │   │   ├── SettingsScreen.tsx      # Notification prefs (native time picker), date reminders, account & sign out
 │   │   ├── BackupRestoreScreen.tsx # Encrypted cloud backup management
@@ -48,7 +48,7 @@ Tend/
 │   │   ├── InteractionPicker.tsx   # Modal for logging interaction types
 │   │   └── icons/index.tsx          # Custom SVG icon components
 │   ├── context/
-│   │   ├── AppContext.tsx          # Global state provider (persons, settings, CRUD ops)
+│   │   ├── AppContext.tsx          # Global state provider (persons, settings, CRUD ops, notification scheduling)
 │   │   └── AuthContext.tsx         # Auth state provider (user, session, signIn/signUp/signOut/resetPassword/deleteAccount)
 │   ├── lib/
 │   │   └── supabase.ts             # Supabase client configuration
@@ -218,14 +218,16 @@ When bumping the version in `app.json`, also update:
 All date fields (birthday, anniversary) use MM/DD format with auto-formatting as user types.
 
 ### Expo Plugins & Permissions
-- `expo-contacts` with `READ_CONTACTS` permission — used for contact import on AddEditPerson screen
+- `expo-contacts` with `READ_CONTACTS` permission — used for bulk contact import on AddEditPerson screen (full-screen modal with search, multi-select, and batch add)
 - `expo-calendar` with `READ_CALENDAR`/`WRITE_CALENDAR` permissions — used for "Book It" feature on Hangout screen
 - `@react-native-community/datetimepicker` — native time picker for notification time settings
 
 ### Notifications (iOS & Android)
 - **iOS permissions**: Must request with explicit `ios: { allowAlert, allowBadge, allowSound }` options
+- **iOS behavior**: `setNotificationHandler` must include `shouldShowBanner` and `shouldShowList` (required by newer expo-notifications)
 - **Sound**: Use `sound: 'default'` (string), not `sound: true` (boolean) — iOS requires the string form
 - **Scheduling**: Notifications are scheduled as one-shot DATE triggers for the next 7 days (skipping quiet days). The app reschedules whenever `persons` or `settings` change. If the user doesn't open the app for 7+ days, notifications will stop until next open.
+- **Wiring**: `AppContext.tsx` requests permissions on init and reschedules notifications via `useEffect` whenever `persons` or `settings` state changes. The notification utility functions in `notifications.ts` must be called from AppContext — they do not self-register.
 - **Android**: Uses a `reminders` notification channel with HIGH importance
 - **Time picker**: Settings screen uses `@react-native-community/datetimepicker` for minute-level precision (replaces old Alert-based hourly picker)
 
@@ -271,7 +273,7 @@ npx expo start
 - **Get activity idea**: Hangout tab > tap "Get an Idea"
 - **Remove person**: Person detail > "Remove from Orbit"
 - **Delete account**: Settings > Account > Delete Account (double confirmation, calls Supabase Edge Function)
-- **Import from contacts**: When adding a person, tap "Import from Contacts" (uses expo-contacts)
+- **Bulk import from contacts**: When adding a person, tap "Import from Contacts" → search & multi-select → "Import N Contacts" (added as friends with weekly frequency; edit details later). Long-press a single contact to fill the current form instead.
 - **Book activity to calendar**: Hangout tab > get idea > "Book It" (books to next Saturday 7 PM via expo-calendar)
 - **View privacy policy**: Settings > About > Privacy Policy
 - **Configure date reminders**: Settings > Birthday & Anniversary Reminders section

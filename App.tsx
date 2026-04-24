@@ -170,6 +170,7 @@ function AuthNavigator() {
 function AppNavigator() {
   const { persons, settings, loading } = useApp();
   const navigationRef = useRef<any>(null);
+  const pendingNavigationRef = useRef<string | null>(null);
 
   useEffect(() => {
     requestNotificationPermissions();
@@ -184,8 +185,12 @@ function AppNavigator() {
   useEffect(() => {
     const subscription = addNotificationResponseListener((response) => {
       const personId = response.notification.request.content.data?.personId as string;
-      if (personId && navigationRef.current) {
-        navigationRef.current.navigate('PersonDetail', { personId });
+      if (personId) {
+        if (navigationRef.current) {
+          navigationRef.current.navigate('PersonDetail', { personId });
+        } else {
+          pendingNavigationRef.current = personId;
+        }
       }
     });
 
@@ -202,7 +207,15 @@ function AppNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        if (pendingNavigationRef.current && navigationRef.current) {
+          navigationRef.current.navigate('PersonDetail', { personId: pendingNavigationRef.current });
+          pendingNavigationRef.current = null;
+        }
+      }}
+    >
       <Stack.Navigator
         screenOptions={{
           headerStyle: {

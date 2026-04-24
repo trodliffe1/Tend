@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import PersonCard from '../components/PersonCard';
@@ -23,6 +23,16 @@ export default function HomeScreen() {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Close the picker when navigating away from this screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setPickerVisible(false);
+        setSelectedPerson(null);
+      };
+    }, [])
+  );
 
   const sortedPersons = useMemo(() => sortByUrgency(persons), [persons]);
 

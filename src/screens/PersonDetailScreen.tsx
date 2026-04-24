@@ -63,7 +63,12 @@ export default function PersonDetailScreen() {
 
   useEffect(() => {
     const found = persons.find(p => p.id === route.params.personId);
-    setPerson(found || null);
+    if (found) {
+      setPerson(found);
+    } else if (person !== null) {
+      // Person was deleted elsewhere — go back
+      navigation.goBack();
+    }
   }, [persons, route.params.personId]);
 
   if (!person) {

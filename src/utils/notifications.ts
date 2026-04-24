@@ -39,6 +39,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -140,6 +142,16 @@ function getUpcomingDates(persons: Person[], maxDays: number): UpcomingDate[] {
   return dates.sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
+function parsePreferredTime(timeStr: string): { hours: number; minutes: number } {
+  const parts = timeStr?.split(':').map(Number);
+  const hours = parts?.[0];
+  const minutes = parts?.[1];
+  if (hours == null || minutes == null || isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return { hours: 9, minutes: 0 };
+  }
+  return { hours, minutes };
+}
+
 export async function scheduleReminderNotifications(
   persons: Person[],
   settings: AppSettings
@@ -165,7 +177,7 @@ export async function scheduleReminderNotifications(
   }
 
   // Parse preferred time
-  const [hours, minutes] = settings.notifications.preferredTime.split(':').map(Number);
+  const { hours, minutes } = parsePreferredTime(settings.notifications.preferredTime);
 
   // Sort by urgency and pick the most overdue person
   const sortedByUrgency = needsAttention.sort(
@@ -241,11 +253,13 @@ async function scheduleDateReminders(
   const { dateReminders } = settings;
   if (!dateReminders) return;
 
-  const [hours, minutes] = settings.notifications.preferredTime.split(':').map(Number);
+  const { hours, minutes } = parsePreferredTime(settings.notifications.preferredTime);
 
   // Get upcoming dates within the early warning window (or 30 days max)
   const maxDays = Math.max(dateReminders.earlyWarningDays || 7, 30);
   const upcomingDates = getUpcomingDates(persons, maxDays);
+
+  const quietDays = settings.notifications.quietDays;
 
   for (const upcoming of upcomingDates) {
     // Schedule on-the-day notification
@@ -254,35 +268,52 @@ async function scheduleDateReminders(
       notifDate.setDate(notifDate.getDate() + upcoming.daysUntil);
       notifDate.setHours(hours, minutes, 0, 0);
 
-      // Don't schedule if the time has already passed today
+      const emoji = upcoming.type === 'anniversary' ? '💍' : '🎂';
+      const content = {
+        title: `${emoji} ${upcoming.type === 'anniversary' ? 'Anniversary' : 'Birthday'} Today!`,
+        body: upcoming.label,
+        sound: 'default' as const,
+      };
+
       if (notifDate > new Date()) {
-        const emoji = upcoming.type === 'anniversary' ? '💍' : '🎂';
+        // Preferred time hasn't passed yet — schedule at preferred time
         await Notifications.scheduleNotificationAsync({
-          content: {
-            title: `${emoji} ${upcoming.type === 'anniversary' ? 'Anniversary' : 'Birthday'} Today!`,
-            body: upcoming.label,
-            sound: 'default',
-          },
+          content,
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: notifDate,
+          },
+        });
+      } else if (upcoming.daysUntil === 0) {
+        // It's today but preferred time already passed — send in 5 seconds
+        await Notifications.scheduleNotificationAsync({
+          content,
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: new Date(Date.now() + 5000),
           },
         });
       }
     }
 
     // Schedule early warning notification
-    if (dateReminders.earlyWarningEnabled && upcoming.daysUntil === dateReminders.earlyWarningDays) {
+    // Fire when the date is within the early warning window (and more than 0 days away)
+    if (dateReminders.earlyWarningEnabled && upcoming.daysUntil > 0 && upcoming.daysUntil <= dateReminders.earlyWarningDays) {
+      // Schedule for today (earliest warning), at preferred time
       const notifDate = new Date();
       notifDate.setHours(hours, minutes, 0, 0);
 
+      // Skip quiet days for early warnings
+      if (quietDays.includes(notifDate.getDay())) {
+        continue;
+      }
+
       // Don't schedule if the time has already passed today
       if (notifDate > new Date()) {
-        const days = dateReminders.earlyWarningDays;
         await Notifications.scheduleNotificationAsync({
           content: {
             title: '📅 Upcoming Date',
-            body: `${upcoming.label} is in ${days} ${days === 1 ? 'day' : 'days'}`,
+            body: `${upcoming.label} is in ${upcoming.daysUntil} ${upcoming.daysUntil === 1 ? 'day' : 'days'}`,
             sound: 'default',
           },
           trigger: {

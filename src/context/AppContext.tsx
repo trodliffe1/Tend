@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Person, AppSettings, Note, Interaction } from '../types';
 import * as db from '../database/database';
 import { generateId } from '../utils/helpers';
+import { requestNotificationPermissions, scheduleReminderNotifications } from '../utils/notifications';
 
 interface AppContextType {
   persons: Person[];
@@ -10,6 +11,7 @@ interface AppContextType {
   refreshPersons: () => Promise<void>;
   refreshData: () => Promise<void>;
   addPerson: (person: Omit<Person, 'id' | 'notes' | 'interactions' | 'createdAt'>) => Promise<void>;
+  addPersonsBatch: (persons: Omit<Person, 'id' | 'notes' | 'interactions' | 'createdAt'>[]) => Promise<void>;
   updatePerson: (person: Partial<Person> & { id: string }) => Promise<void>;
   deletePerson: (id: string) => Promise<void>;
   addNote: (personId: string, content: string) => Promise<void>;
@@ -56,15 +58,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await loadSettings();
   }, [refreshPersons, loadSettings]);
 
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
     async function init() {
       setLoading(true);
       await refreshPersons();
       await loadSettings();
+      await requestNotificationPermissions();
+      initialLoadDone.current = true;
       setLoading(false);
     }
     init();
   }, [refreshPersons, loadSettings]);
+
+  // Reschedule notifications whenever persons or settings change
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    scheduleReminderNotifications(persons, settings);
+  }, [persons, settings]);
 
   const addPerson = async (personData: Omit<Person, 'id' | 'notes' | 'interactions' | 'createdAt'>) => {
     const person = {
@@ -74,6 +86,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     await db.createPerson(person);
+    await refreshPersons();
+  };
+
+  const addPersonsBatch = async (personsData: Omit<Person, 'id' | 'notes' | 'interactions' | 'createdAt'>[]) => {
+    for (const personData of personsData) {
+      const person = {
+        ...personData,
+        id: generateId(),
+        kids: personData.kids || [],
+        createdAt: new Date().toISOString(),
+      };
+      await db.createPerson(person);
+    }
     await refreshPersons();
   };
 
@@ -132,6 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshPersons,
         refreshData,
         addPerson,
+        addPersonsBatch,
         updatePerson,
         deletePerson,
         addNote,

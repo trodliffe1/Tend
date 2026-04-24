@@ -61,17 +61,18 @@ export default function SettingsScreen() {
   const performAccountDeletion = async () => {
     setDeleteLoading(true);
     try {
-      // 1. Delete cloud backup (ignore errors - may not exist)
-      await deleteBackup();
-
-      // 2. Delete all local data
-      await deleteAllLocalData();
-
-      // 3. Delete Supabase auth account
+      // 1. Delete Supabase auth account first (if this fails, local data is preserved)
       const { error } = await deleteAccount();
       if (error) {
         Alert.alert('Error', error);
+        return;
       }
+
+      // 2. Delete cloud backup (ignore errors - may not exist)
+      await deleteBackup();
+
+      // 3. Delete all local data last (only after remote deletion succeeds)
+      await deleteAllLocalData();
     } catch (error) {
       console.error('Account deletion error:', error);
       Alert.alert('Error', 'Failed to delete account. Please try again.');

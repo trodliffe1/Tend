@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
   TextInput,
   TouchableOpacity,
   Image,
@@ -11,11 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
+import { Paths, File, Directory } from 'expo-file-system';
 import * as Contacts from 'expo-contacts';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -29,6 +32,35 @@ import {
 } from '../types';
 import { generateId } from '../utils/helpers';
 
+const photosDir = new Directory(Paths.document, 'photos/');
+
+const ensurePhotosDir = () => {
+  if (!photosDir.exists) {
+    photosDir.create({ intermediates: true });
+  }
+};
+
+const savePhotoToStorage = (sourceUri: string): string => {
+  ensurePhotosDir();
+  const extension = sourceUri.split('.').pop()?.split('?')[0] || 'jpg';
+  const filename = `${generateId()}.${extension}`;
+  const sourceFile = new File(sourceUri);
+  const destFile = new File(photosDir, filename);
+  sourceFile.copy(destFile);
+  return destFile.uri;
+};
+
+const deletePhotoFromStorage = (uri: string) => {
+  try {
+    const file = new File(uri);
+    if (file.exists) {
+      file.delete();
+    }
+  } catch (error) {
+    console.warn('Failed to delete photo:', uri, error);
+  }
+};
+
 type RootStackParamList = {
   MainTabs: undefined;
   PersonDetail: { personId: string };
@@ -40,7 +72,7 @@ type AddEditPersonRouteProp = RouteProp<RootStackParamList, 'AddEditPerson'>;
 export default function AddEditPersonScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<AddEditPersonRouteProp>();
-  const { persons, addPerson, updatePerson } = useApp();
+  const { persons, addPerson, addPersonsBatch, updatePerson } = useApp();
 
   const isEditing = !!route.params?.personId;
   const existingPerson = isEditing
@@ -61,6 +93,12 @@ export default function AddEditPersonScreen() {
   const [kids, setKids] = useState<FamilyMember[]>(existingPerson?.kids || []);
   const [saving, setSaving] = useState(false);
   const [showFrequencyPicker, setShowFrequencyPicker] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [deviceContacts, setDeviceContacts] = useState<Contacts.ExistingContact[]>([]);
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+  const [contactSearch, setContactSearch] = useState('');
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [importingContacts, setImportingContacts] = useState(false);
 
   // Format date input as MM/DD
   const formatDateInput = (text: string): string => {
@@ -92,40 +130,118 @@ export default function AddEditPersonScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setPhoto(result.assets[0].uri);
+      try {
+        const persistentUri = savePhotoToStorage(result.assets[0].uri);
+        if (photo) {
+          deletePhotoFromStorage(photo);
+        }
+        setPhoto(persistentUri);
+      } catch {
+        Alert.alert('Error', 'Failed to save photo. Please try again.');
+      }
     }
   };
 
-  const importFromContacts = async () => {
+  const openContactPicker = async () => {
     const { status } = await Contacts.requestPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Denied', 'Please allow access to contacts to import.');
       return;
     }
 
+    setLoadingContacts(true);
+    setShowContactPicker(true);
+    setSelectedContactIds(new Set());
+    setContactSearch('');
+
     const { data } = await Contacts.getContactsAsync({
       fields: [Contacts.Fields.Name, Contacts.Fields.Image],
+      sort: Contacts.SortTypes.FirstName,
     });
 
-    if (data.length > 0) {
-      // Show a simple picker with first 20 contacts
-      const contactOptions = data.slice(0, 20).map(contact => ({
-        text: contact.name || 'Unknown',
-        onPress: () => {
-          setName(contact.name || '');
-          if (contact.image?.uri) {
-            setPhoto(contact.image.uri);
-          }
-        },
-      }));
+    setDeviceContacts(data.filter(c => c.name));
+    setLoadingContacts(false);
+  };
 
-      Alert.alert('Select Contact', 'Choose a contact to import', [
-        ...contactOptions.slice(0, 5),
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    } else {
-      Alert.alert('No Contacts', 'No contacts found on this device.');
+  const filteredContacts = useMemo(() => {
+    if (!contactSearch.trim()) return deviceContacts;
+    const query = contactSearch.toLowerCase();
+    return deviceContacts.filter(c => c.name?.toLowerCase().includes(query));
+  }, [deviceContacts, contactSearch]);
+
+  const toggleContactSelected = (id: string) => {
+    setSelectedContactIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkImport = async () => {
+    const selected = deviceContacts.filter(c => c.id && selectedContactIds.has(c.id));
+    if (selected.length === 0) return;
+
+    setImportingContacts(true);
+    try {
+      const personsToAdd = selected.map(contact => {
+        let contactPhoto: string | undefined;
+        if (contact.image?.uri) {
+          try {
+            contactPhoto = savePhotoToStorage(contact.image.uri);
+          } catch {
+            // Skip photo if it fails
+          }
+        }
+
+        return {
+          name: contact.name || 'Unknown',
+          photo: contactPhoto,
+          relationshipType: 'friend' as const,
+          frequency: 'weekly' as const,
+          lastContactDate: null,
+          birthday: undefined,
+          anniversary: undefined,
+          spouse: undefined,
+          kids: [],
+        };
+      });
+
+      await addPersonsBatch(personsToAdd);
+
+      setShowContactPicker(false);
+      navigation.goBack();
+      // Small delay so the home screen is visible before the alert
+      setTimeout(() => {
+        Alert.alert(
+          'Contacts Imported',
+          `${selected.length} ${selected.length === 1 ? 'contact' : 'contacts'} added to your orbit. Tap each one to add details like frequency, birthday, etc.`
+        );
+      }, 300);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to import some contacts. Please try again.');
+    } finally {
+      setImportingContacts(false);
     }
+  };
+
+  const importSingleContact = (contact: Contacts.ExistingContact) => {
+    setName(contact.name || '');
+    if (contact.image?.uri) {
+      try {
+        const persistentUri = savePhotoToStorage(contact.image.uri);
+        if (photo) {
+          deletePhotoFromStorage(photo);
+        }
+        setPhoto(persistentUri);
+      } catch {
+        // Silently fail for contact photo import
+      }
+    }
+    setShowContactPicker(false);
   };
 
   const addKid = () => {
@@ -236,7 +352,7 @@ export default function AddEditPersonScreen() {
             autoCapitalize="words"
           />
           {!isEditing && (
-            <TouchableOpacity style={styles.importButton} onPress={importFromContacts}>
+            <TouchableOpacity style={styles.importButton} onPress={openContactPicker}>
               <Text style={styles.importButtonText}>Import from Contacts</Text>
             </TouchableOpacity>
           )}
@@ -463,6 +579,115 @@ export default function AddEditPersonScreen() {
         </View>
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Contact Picker Modal */}
+      <Modal
+        visible={showContactPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowContactPicker(false)}
+      >
+        <SafeAreaView style={styles.contactPickerContainer} edges={['top', 'bottom']}>
+          {/* Header */}
+          <View style={styles.contactPickerHeader}>
+            <TouchableOpacity onPress={() => setShowContactPicker(false)}>
+              <Text style={styles.contactPickerCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.contactPickerTitle}>Import Contacts</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          {/* Search */}
+          <View style={styles.contactSearchContainer}>
+            <TextInput
+              style={styles.contactSearchInput}
+              placeholder="Search contacts..."
+              placeholderTextColor={colors.textLight}
+              value={contactSearch}
+              onChangeText={setContactSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Selection info & actions */}
+          {selectedContactIds.size > 0 && (
+            <View style={styles.contactSelectionBar}>
+              <Text style={styles.contactSelectionText}>
+                {selectedContactIds.size} selected
+              </Text>
+              <TouchableOpacity onPress={() => setSelectedContactIds(new Set())}>
+                <Text style={styles.contactClearText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Contact List */}
+          {loadingContacts ? (
+            <View style={styles.contactLoadingContainer}>
+              <ActivityIndicator color={colors.primary} size="large" />
+              <Text style={styles.contactLoadingText}>Loading contacts...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredContacts}
+              keyExtractor={(item) => item.id || item.name || ''}
+              renderItem={({ item }) => {
+                const isSelected = item.id ? selectedContactIds.has(item.id) : false;
+                return (
+                  <TouchableOpacity
+                    style={[styles.contactRow, isSelected && styles.contactRowSelected]}
+                    onPress={() => item.id && toggleContactSelected(item.id)}
+                    onLongPress={() => importSingleContact(item)}
+                  >
+                    <View style={styles.contactCheckbox}>
+                      {isSelected && <View style={styles.contactCheckboxFill} />}
+                    </View>
+                    {item.image?.uri ? (
+                      <Image source={{ uri: item.image.uri }} style={styles.contactAvatar} />
+                    ) : (
+                      <View style={styles.contactAvatarPlaceholder}>
+                        <Text style={styles.contactAvatarText}>
+                          {item.name?.charAt(0)?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <Text style={styles.contactEmptyText}>
+                  {contactSearch ? 'No contacts match your search' : 'No contacts found'}
+                </Text>
+              }
+              contentContainerStyle={styles.contactListContent}
+            />
+          )}
+
+          {/* Import Button */}
+          {selectedContactIds.size > 0 && (
+            <View style={styles.contactImportBar}>
+              <TouchableOpacity
+                style={styles.contactImportButton}
+                onPress={handleBulkImport}
+                disabled={importingContacts}
+              >
+                {importingContacts ? (
+                  <ActivityIndicator color={colors.background} size="small" />
+                ) : (
+                  <Text style={styles.contactImportButtonText}>
+                    Import {selectedContactIds.size} {selectedContactIds.size === 1 ? 'Contact' : 'Contacts'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+              <Text style={styles.contactImportHint}>
+                Added as friends with weekly frequency. Edit details later.
+              </Text>
+            </View>
+          )}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -723,5 +948,158 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textLight,
     fontStyle: 'italic',
+  },
+  // Contact Picker styles
+  contactPickerContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  contactPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  contactPickerCancel: {
+    fontSize: 16,
+    color: colors.secondary,
+    fontWeight: '500',
+  },
+  contactPickerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  contactSearchContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  contactSearchInput: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: 16,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  contactSelectionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  contactSelectionText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  contactClearText: {
+    fontSize: 14,
+    color: colors.secondary,
+    fontWeight: '500',
+  },
+  contactLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  contactLoadingText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  contactListContent: {
+    paddingHorizontal: spacing.lg,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border + '40',
+    gap: spacing.md,
+  },
+  contactRowSelected: {
+    backgroundColor: colors.primary + '15',
+  },
+  contactCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactCheckboxFill: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
+  contactAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  contactAvatarPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactAvatarText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  contactName: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+  },
+  contactEmptyText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    marginTop: spacing.xl,
+  },
+  contactImportBar: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  contactImportButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.md,
+    width: '100%',
+    alignItems: 'center',
+  },
+  contactImportButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.background,
+  },
+  contactImportHint: {
+    fontSize: 12,
+    color: colors.textLight,
   },
 });
