@@ -384,7 +384,7 @@ export default function SettingsScreen() {
             <Text style={styles.aboutText}>
               A relationship tracker to help you maintain signal with the humans who matter.
             </Text>
-            <Text style={styles.versionText}>Version 1.1.0</Text>
+            <Text style={styles.versionText}>Version 1.2.0</Text>
           </View>
 
           <TouchableOpacity

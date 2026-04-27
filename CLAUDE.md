@@ -35,7 +35,7 @@ Tend/
 │   │   ├── HomeScreen.tsx          # Dashboard ("MyOrbyt") showing all connections sorted by urgency
 │   │   ├── PersonDetailScreen.tsx  # Individual person view with notes & interaction history
 │   │   ├── AddEditPersonScreen.tsx # Modal for creating/editing people (with family details & bulk contact import)
-│   │   ├── HangoutScreen.tsx        # Random activity idea generator
+│   │   ├── HangoutScreen.tsx        # London events finder — borough/type/date filters → 3 random events from Supabase
 │   │   ├── SettingsScreen.tsx      # Notification prefs (native time picker), date reminders, account & sign out
 │   │   ├── BackupRestoreScreen.tsx # Encrypted cloud backup management
 │   │   ├── LocalBackupScreen.tsx   # Local JSON export/import
@@ -51,7 +51,8 @@ Tend/
 │   │   ├── AppContext.tsx          # Global state provider (persons, settings, CRUD ops, notification scheduling)
 │   │   └── AuthContext.tsx         # Auth state provider (user, session, signIn/signUp/signOut/resetPassword/deleteAccount)
 │   ├── lib/
-│   │   └── supabase.ts             # Supabase client configuration
+│   │   ├── supabase.ts             # Supabase client configuration
+│   │   └── events.ts               # EventHub events/boroughs queries (filtered random fetch w/ diversity)
 │   ├── database/
 │   │   └── database.ts             # SQLite operations (CRUD for persons, notes, interactions, family_members)
 │   ├── types/
@@ -65,8 +66,7 @@ Tend/
 │   │   ├── encryption.ts           # AES encryption/decryption for cloud backup
 │   │   └── backup.ts               # Cloud backup/restore orchestration
 │   └── constants/
-│       ├── theme.ts                # Dark CRT terminal theme colors, spacing, typography
-│       └── activityIdeas.ts        # 40+ categorized activity ideas
+│       └── theme.ts                # Dark CRT terminal theme colors, spacing, typography
 ├── supabase/
 │   └── functions/
 │       └── delete-user-account/  # Edge function for account deletion
@@ -219,7 +219,7 @@ All date fields (birthday, anniversary) use MM/DD format with auto-formatting as
 
 ### Expo Plugins & Permissions
 - `expo-contacts` with `READ_CONTACTS` permission — used for bulk contact import on AddEditPerson screen (full-screen modal with search, multi-select, and batch add)
-- `expo-calendar` with `READ_CALENDAR`/`WRITE_CALENDAR` permissions — used for "Book It" feature on Hangout screen
+- `expo-calendar` with `READ_CALENDAR`/`WRITE_CALENDAR` permissions — historically used for the old Hangout "Book It" feature; currently unused but plugin still wired in app.json
 - `@react-native-community/datetimepicker` — native time picker for notification time settings
 
 ### Notifications (iOS & Android)
@@ -239,6 +239,32 @@ All date fields (birthday, anniversary) use MM/DD format with auto-formatting as
 ### Supabase Tables
 - `user_backups` - Encrypted backup blobs (one per user, RLS-protected)
   - Columns: id, user_id, encrypted_data, salt, iv, version, created_at, updated_at
+- `events` - London events populated by EventHub pipeline (read-only for authenticated users)
+  - Filtered by borough/category/date on the Hangout screen
+- `boroughs` - 32 London boroughs + City of London (slug, name); referenced by `events.borough`
+
+### Hangout Screen — Random Event Finder
+The Hangout tab is an EventHub-backed events finder. Filters are all multi-select
+(borough, event type) plus presets + a custom date.
+
+**Filters:**
+- **Boroughs**: bottom-sheet modal with the full `boroughs` lookup. Tap-to-toggle, `Clear` / `Done` in the header. Empty selection = any borough.
+- **Event types**: horizontal pills, multi-select. `All` clears the selection. Empty = any type. Categories come from `events.category` (`film`, `food_and_drink`, `music`, `comedy`, `theatre`, `art`, `market`, `talks`, `outdoor`).
+- **Date**: presets (`Any time`, `Today`, `Tomorrow`, `Weekend`, `Next 7 days`) plus a `Pick date` pill that opens `@react-native-community/datetimepicker` (Android inline, iOS in a bottom-sheet modal). `Any time` filters to today and forward.
+
+**Random sampling (`src/lib/events.ts → fetchRandomEvents`):**
+Two-step ID sample with diversity post-filter — DB function not used.
+1. Query `(id, source, category)` for the filtered set, capped at 1000 rows (PostgREST default), ordered by `id` for stability.
+2. Fisher–Yates shuffle the candidates.
+3. Greedy 3-pass pick:
+   - Pass 1: distinct `source` AND distinct `category`.
+   - Pass 2: distinct `source` only.
+   - Pass 3: fill remaining slots from leftovers.
+4. Fetch the chosen rows by `.in('id', ids)` and reorder to match the picked order.
+
+Why diversification: the EventHub pipeline writes 26 cinema workflows, so cinema sources (Vue, Cineworld, …) dominate the table. Without diversification, "Find 3 Events" with any-type filter returned 3 Vue rows almost every time. Source diversity → no repeated chains/venues. Category diversity → with "All" types selected, results spread across film/music/theatre/etc.
+
+Caveats: when a filter yields >1000 rows, the random pool is still capped to the first 1000 by `id`. True uniform random over the whole set requires a Supabase RPC (`order by random() limit n`) — not implemented.
 
 ## Environment Variables
 Create a `.env` file in the Tend directory (gitignored):
@@ -270,10 +296,9 @@ npx expo start
 - **Add family details**: When adding/editing a person, scroll down to add spouse and kids with birthdays
 - **Log contact**: Tap "Log Contact" on person card or detail screen
 - **Add context note**: Person detail > Notes section > + Add
-- **Get activity idea**: Hangout tab > tap "Get an Idea"
+- **Find an event**: Hangout tab > pick borough / event type / date > tap "Find 3 Events" > tap a card to open the event link
 - **Remove person**: Person detail > "Remove from Orbit"
 - **Delete account**: Settings > Account > Delete Account (double confirmation, calls Supabase Edge Function)
 - **Bulk import from contacts**: When adding a person, tap "Import from Contacts" → search & multi-select → "Import N Contacts" (added as friends with weekly frequency; edit details later). Long-press a single contact to fill the current form instead.
-- **Book activity to calendar**: Hangout tab > get idea > "Book It" (books to next Saturday 7 PM via expo-calendar)
 - **View privacy policy**: Settings > About > Privacy Policy
 - **Configure date reminders**: Settings > Birthday & Anniversary Reminders section
