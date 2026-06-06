@@ -15,7 +15,7 @@ Orbyt is a mobile app that helps users maintain meaningful connections with frie
 - **Language**: TypeScript 5.9.2 (strict mode)
 - **Navigation**: React Navigation 7.x (bottom tabs + native stack)
 - **Database**: expo-sqlite (local-first)
-- **Authentication**: Supabase Auth with AsyncStorage session persistence
+- **Authentication**: Supabase Auth (email/password + native Google Sign-In) with AsyncStorage session persistence
 - **State Management**: React Context (AppContext for data, AuthContext for auth)
 - **Notifications**: expo-notifications
 - **Time Picker**: @react-native-community/datetimepicker (native time picker in Settings)
@@ -46,12 +46,13 @@ Tend/
 │   │   ├── StatusRing.tsx          # Circular progress indicator (legacy, replaced by HealthBar)
 │   │   ├── Button.tsx              # Styled button component
 │   │   ├── InteractionPicker.tsx   # Modal for logging interaction types
-│   │   └── icons/index.tsx          # Custom SVG icon components
+│   │   └── icons/index.tsx          # Custom SVG icon components (incl. GoogleGIcon — official multicolor Google "G" logo)
 │   ├── context/
 │   │   ├── AppContext.tsx          # Global state provider (persons, settings, CRUD ops, notification scheduling)
 │   │   └── AuthContext.tsx         # Auth state provider (user, session, signIn/signUp/signOut/resetPassword/deleteAccount)
 │   ├── lib/
 │   │   ├── supabase.ts             # Supabase client configuration
+│   │   ├── googleAuth.ts           # configureGoogleSignIn() — native Google Sign-In SDK setup (reads client IDs from .env)
 │   │   └── events.ts               # EventHub events/boroughs queries (filtered random fetch w/ diversity)
 │   ├── database/
 │   │   └── database.ts             # SQLite operations (CRUD for persons, notes, interactions, family_members)
@@ -146,14 +147,42 @@ The `HealthBar` component displays a vertical bar next to avatars:
 - Note: Some in-app button labels still use "Orbit" (e.g., "Remove from Orbit", "Launch into Orbit")
 
 ### Authentication
-- **Provider**: Supabase Auth with email/password
+- **Provider**: Supabase Auth with email/password, **native Google Sign-In, and Sign in with Apple (iOS)**
 - **Session persistence**: AsyncStorage (survives app restarts)
 - **Auth state**: Managed via AuthContext (user, session, loading, initialized)
-- **Methods**: signIn, signUp, signOut, resetPassword, deleteAccount
+- **Methods**: signIn, signUp, signInWithGoogle, signInWithApple, signOut, resetPassword, deleteAccount
 - **Protected routes**: App content only accessible when authenticated
 - **Password requirements**: 8+ chars, uppercase, lowercase, number
-- **Sign out**: Available in Settings > Account section
+- **Sign out**: Available in Settings > Account section (also calls `GoogleSignin.signOut()` to clear any cached Google session)
 - **Account deletion**: Settings > Account > Delete Account (double confirmation, calls Supabase Edge Function `delete-user-account`)
+
+#### Google Sign-In (native)
+- **Library**: `@react-native-google-signin/google-signin` — native account picker, NOT the OAuth web flow.
+- **Flow**: native picker → ID token → `supabase.auth.signInWithIdToken({ provider: 'google', token })`. The resulting session flows through the existing `onAuthStateChange` listener, so no downstream app changes were needed.
+- **Config**: `src/lib/googleAuth.ts` exposes `configureGoogleSignIn()`, called once on startup in `AuthContext`'s init `useEffect`. Reads client IDs from `.env` (`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`).
+- **UI**: official-style black "Continue with Google" button — black bg, multicolor `GoogleGIcon` logo, white system-font label, subtle gray border (`#5F6368`) so it reads on the pure-black background. With an "OR" divider, on both `LoginScreen` and `RegisterScreen`. Deliberately NOT CRT-green so it sits consistently next to the Apple button (see below).
+- **app.json**: `@react-native-google-signin/google-signin` config plugin with the iOS reversed-client-ID `iosUrlScheme`.
+- **Requires a dev build** — the native module does NOT run in Expo Go. Use `eas build --profile development` (needs `expo-dev-client`), then `npx expo start --dev-client`.
+- **OAuth client IDs (Google Cloud Console)**:
+  - **Web** client → used as `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` and pasted into Supabase (Auth → Providers → Google → Client ID + Secret). On Android the ID token's audience is the **Web** client, so this must be the Web ID, not Android/iOS.
+  - **iOS** client → its reversed ID is the `iosUrlScheme`; the iOS client ID goes in Supabase "Authorized Client IDs" (iOS token audience).
+  - **Android** client(s) → one per signing-key SHA-1 (Cloud Console allows only one SHA-1 per Android client, so create a separate client per fingerprint, all with package `com.myorbyt.app`). Android clients are NEVER referenced in code or Supabase — Google uses them only to verify the app's signature. Because the app is live with Play App Signing, register BOTH the **App signing key** SHA-1 (live Play Store app) and the **Upload key** SHA-1 (EAS/dev builds), both found in Play Console → Test and release → App integrity → App signing.
+- **Supabase**: enable Google provider, set Web Client ID + Secret, add the **iOS** client ID to "Authorized Client IDs". No SQL/schema change — Google users land in `auth.users` like email users.
+- **PRODUCTION PREREQ — publish the OAuth consent screen**: while it's in **Testing**, only allow-listed test users can sign in (100-user cap, refresh tokens expire after 7 days). Before release, Google Cloud Console → OAuth consent screen / Google Auth Platform → **Audience** → **Publish app** (Testing → In production). With only `email`/`profile`/`openid` (non-sensitive) scopes this is instant and needs **no Google verification**.
+- **GOTCHA — "Skip nonce check" must be ON**: On iOS, Google's Sign-In SDK embeds a `nonce` claim in the ID token, but `@react-native-google-signin` doesn't expose it to pass to `signInWithIdToken`. Without the Supabase Google provider's **"Skip nonce check"** toggle enabled, sign-in fails with HTTP 400 `Passed nonce and nonce in id_token should either both exist or not.` Token is still validated by signature/audience/expiry — only the nonce check is skipped.
+
+#### Sign in with Apple (iOS only)
+- **Why it exists**: Apple **App Store Guideline 4.8** requires apps offering a third-party social login (Google) to also offer Sign in with Apple, or the iOS build is rejected.
+- **Library**: `expo-apple-authentication`. `signInWithApple()` in `AuthContext` → `AppleAuthentication.signInAsync()` → `supabase.auth.signInWithIdToken({ provider: 'apple', token: identityToken })`.
+- **UI**: official `AppleAuthentication.AppleAuthenticationButton` (Apple requires their own button — can't be freely restyled; only black/white/outline + corner radius + label are configurable). Uses `BLACK` style + `CONTINUE` label, `cornerRadius={0}`, wrapped in a bordered `View` (`#5F6368`) to match the black Google button on the pure-black background. Rendered **only when `Platform.OS === 'ios'`**; Android never shows it. The Google button was made black specifically to pair with this — Apple's button is the one that can't change, so Google matches it.
+- **Auth screen layout** (`LoginScreen`): order is email/password → ESTABLISH CONNECTION → FORGOT ACCESS CODE? → NEW OPERATOR? REGISTER → "OR" divider → Google → Apple (links sit ABOVE the social buttons).
+- **app.json**: `ios.usesAppleSignIn: true` + `expo-apple-authentication` plugin. EAS enables the "Sign in with Apple" capability on the App ID at build time.
+- **Supabase**: enable the **Apple** provider, and add the app bundle ID `com.myorbyt.app` to its Client IDs. For native iOS-only sign-in, no Services ID / secret key is required (those are only for the web/Android OAuth flow).
+- **Native module** → requires a fresh dev build to test (not in Expo Go, and not in any dev build created before this was added).
+- **GOTCHA — "Hide My Email" / private relay**: Apple users can choose **Hide My Email**, in which case the app only ever receives a relay address like `xxxx@privaterelay.appleid.com` (the real email is never exposed — this is unavoidable and creates a separate Supabase user from any Google/email account with the same human). The relay is stable per-user-per-app and forwards to the user's real inbox. **For any outbound email to actually reach these users, the sending domain/address must be registered with Apple**, otherwise mail to relay addresses bounces silently.
+  - **Email setup (configured)**: sends via **Resend** (`smtp.resend.com`) from **`no-reply@myorbyt.com`**. Registered in Apple Developer → Certificates, Identifiers & Profiles → **Sign in with Apple for Email Communication**: domain `myorbyt.com` + address `no-reply@myorbyt.com` (Apple verifies via the domain's SPF/DKIM, which Resend provides once the domain is "Verified" there).
+  - **Supabase auth emails must use this sender too**: Supabase → Project Settings → Auth → **SMTP Settings** is set to the Resend SMTP + `no-reply@myorbyt.com`. Without custom SMTP, Supabase's signup-confirm/password-reset mails go from the default `…supabase.io` domain (NOT registered with Apple) and bounce for relay users.
+- **App Store note**: also returns name/email **only on the first authorization**. Re-test the first-run flow via iPhone Settings → [name] → Sign in with Apple → Orbyt → Stop using Apple ID.
 
 ### Encrypted Cloud Backup
 - **Location**: Settings > Your Data > Cloud Backup
@@ -221,6 +250,7 @@ All date fields (birthday, anniversary) use MM/DD format with auto-formatting as
 - `expo-contacts` with `READ_CONTACTS` permission — used for bulk contact import on AddEditPerson screen (full-screen modal with search, multi-select, and batch add)
 - `expo-calendar` with `READ_CALENDAR`/`WRITE_CALENDAR` permissions — historically used for the old Hangout "Book It" feature; currently unused but plugin still wired in app.json
 - `@react-native-community/datetimepicker` — native time picker for notification time settings
+- `@react-native-google-signin/google-signin` with `iosUrlScheme` — native Google Sign-In (see Authentication > Google Sign-In). Native module → **requires a dev build**, not Expo Go. Pairs with `expo-dev-client`.
 
 ### Notifications (iOS & Android)
 - **iOS permissions**: Must request with explicit `ios: { allowAlert, allowBadge, allowSound }` options
@@ -235,6 +265,7 @@ All date fields (birthday, anniversary) use MM/DD format with auto-formatting as
 - User data stored in `auth.users` (protected schema, view in Dashboard > Authentication > Users)
 - Session tokens auto-refresh via Supabase client config
 - `detectSessionInUrl: false` required for React Native (no browser redirects)
+- **Google provider**: enabled in Authentication > Providers > Google with the **Web** OAuth Client ID + Secret. The **iOS** client ID is added to "Authorized Client IDs". Native ID tokens are verified by audience: Android tokens → Web client ID; iOS tokens → iOS client ID. (See Authentication > Google Sign-In.)
 
 ### Supabase Tables
 - `user_backups` - Encrypted backup blobs (one per user, RLS-protected)
@@ -271,22 +302,35 @@ Create a `.env` file in the Tend directory (gitignored):
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
 ```
 
-Get these values from your Supabase project: Settings > API
+Get the Supabase values from: Settings > API. Get the Google client IDs from Google Cloud Console > APIs & Services > Credentials (Web + iOS OAuth clients). See the Google Sign-In section under Authentication for full setup.
+
+**GOTCHA — local `.env` is NOT used by EAS cloud builds.** `.env` is gitignored, so it is not uploaded to EAS Build. Cloud builds inline `EXPO_PUBLIC_*` values from **EAS environment variables** (per-environment: `development` / `preview` / `production`), NOT from the local file. The local `.env` is only used by `npx expo start` (local Metro). So every `EXPO_PUBLIC_*` var must ALSO be registered on EAS, or a cloud build comes out with `undefined` values (symptom: build succeeds but app can't reach Supabase / Google sign-in silently fails). Manage with `eas env:create --environment <env> --name <NAME> --value <VALUE>` and verify with `eas env:list --environment <env>`. Vars are scoped per environment and do not leak across (dev vars won't end up in a production build). All four `EXPO_PUBLIC_*` are currently set in both `development` and `production`.
 
 ## Running the App
 ```bash
 npm install
-npx expo start
+npx expo start          # Expo Go — email/password auth only
 # Press 'a' for Android, 'i' for iOS, or scan QR with Expo Go
 ```
 
-**First-time setup**: Ensure Supabase project has Email auth enabled (Authentication > Providers > Email).
+**Google Sign-In requires a dev build** (native module, not in Expo Go):
+```bash
+eas build --profile development --platform android   # and/or --platform ios
+# install the build on device, then:
+npx expo start --dev-client
+```
+
+**First-time setup**: Ensure Supabase has Email auth enabled (Authentication > Providers > Email) and, for Google, the Google provider enabled with the Web client ID/secret.
 
 ## Common Tasks
 - **Register**: Launch app > Register link > fill email/password > verify email
 - **Sign in**: Launch app > enter credentials > "Establish Connection"
+- **Sign in / up with Google**: Launch app (dev build) > tap "Continue with Google" > pick account (Login and Register screens both have it)
+- **Sign in / up with Apple** (iOS only): Launch app (dev build) > tap the "Sign in with Apple" button > Face ID / confirm
 - **Sign out**: Settings > Account > Sign Out
 - **Cloud backup**: Settings > Your Data > Cloud Backup > enter password > Create Backup
 - **Cloud restore**: Settings > Your Data > Cloud Backup > enter password > Restore from Backup

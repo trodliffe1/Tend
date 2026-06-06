@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '../lib/supabase';
+import { configureGoogleSignIn } from '../lib/googleAuth';
 import { AuthContextType, AuthState } from '../types/auth';
 import { getAuthErrorMessage } from '../utils/authErrors';
 
@@ -17,6 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(initialState);
 
   useEffect(() => {
+    // Configure the native Google Sign-In SDK once on startup
+    configureGoogleSignIn();
+
     // Get initial session
     const initializeAuth = async () => {
       try {
@@ -92,9 +101,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true }));
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const response = await GoogleSignin.signIn();
+
+      // The user dismissed the Google account picker — not an error.
+      if ((response as any)?.type === 'cancelled') {
+        return { error: null };
+      }
+
+      // v13+ returns { type, data: { idToken } }; older returns idToken directly.
+      const idToken =
+        (response as any)?.data?.idToken ?? (response as any)?.idToken;
+
+      if (!idToken) {
+        return { error: 'No ID token returned from Google.' };
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) {
+        return { error: getAuthErrorMessage(error) };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      // Cancellation / in-progress aren't real failures to surface loudly.
+      if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+        return { error: null };
+      }
+      if (error?.code === statusCodes.IN_PROGRESS) {
+        return { error: 'Sign-in already in progress.' };
+      }
+      if (error?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        return { error: 'Google Play Services not available or outdated.' };
+      }
+      return { error: getAuthErrorMessage(error) };
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  }, []);
+
+  const signInWithApple = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true }));
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        return { error: 'No identity token returned from Apple.' };
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+      });
+
+      if (error) {
+        return { error: getAuthErrorMessage(error) };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      // User dismissed the Apple sheet — not an error to surface.
+      if (error?.code === 'ERR_REQUEST_CANCELED') {
+        return { error: null };
+      }
+      return { error: getAuthErrorMessage(error) };
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true }));
     try {
+      // Clear any cached Google session so the account picker shows next time.
+      try {
+        await GoogleSignin.signOut();
+      } catch {
+        // Ignore — user may not have signed in via Google.
+      }
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
@@ -163,6 +259,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ...state,
     signUp,
     signIn,
+    signInWithGoogle,
+    signInWithApple,
     signOut,
     resetPassword,
     deleteAccount,

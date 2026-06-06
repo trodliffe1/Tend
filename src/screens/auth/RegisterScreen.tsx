@@ -11,8 +11,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
+import { GoogleGIcon } from '../../components/icons';
 import {
   validateEmail,
   validatePassword,
@@ -32,7 +34,7 @@ type RegisterScreenProps = {
 };
 
 export default function RegisterScreen({ navigation }: RegisterScreenProps) {
-  const { signUp, loading } = useAuth();
+  const { signUp, signInWithGoogle, signInWithApple, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -69,6 +71,22 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       setError(result.error);
     } else {
       setSuccess(true);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    const result = await signInWithGoogle();
+    if (result.error) {
+      setError(result.error);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    const result = await signInWithApple();
+    if (result.error) {
+      setError(result.error);
     }
   };
 
@@ -209,6 +227,37 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
                 <Text style={styles.buttonText}>INITIALIZE ACCOUNT</Text>
               )}
             </TouchableOpacity>
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.googleButton, loading && styles.buttonDisabled]}
+              onPress={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <GoogleGIcon size={22} style={styles.googleIcon} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            {Platform.OS === 'ios' && (
+              <View style={styles.appleButtonWrapper}>
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={
+                    AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
+                  }
+                  buttonStyle={
+                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={0}
+                  style={styles.appleButton}
+                  onPress={handleAppleSignIn}
+                />
+              </View>
+            )}
           </View>
 
           <View style={styles.footer}>
@@ -369,6 +418,50 @@ const styles = StyleSheet.create({
     color: colors.background,
     fontFamily: 'monospace',
     letterSpacing: 2,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+    marginHorizontal: spacing.md,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    backgroundColor: '#000000',
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#5F6368',
+  },
+  googleIcon: {
+    marginRight: spacing.sm,
+  },
+  googleButtonText: {
+    fontSize: 19,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  appleButtonWrapper: {
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: '#5F6368',
+  },
+  appleButton: {
+    width: '100%',
+    height: 50,
   },
   footer: {
     flexDirection: 'row',
