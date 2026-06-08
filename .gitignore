@@ -60,3 +60,6 @@ venv/
 
 # Admin/Strategy
 /marketing
+
+# Personal security audit notes (not for public repo)
+SECURITY_AUDIT.md
